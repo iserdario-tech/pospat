@@ -11,7 +11,7 @@ const emptyScreener: ScreenerAnswers = {
 export function Onboarding({ onDone }: { onDone: (p: Profile, s: ScreenerResult) => void }) {
   const [form, setForm] = useState<OnboardingForm>({
     wakeHM: "07:00", bedHM: "23:00", chronotype: "intermediate",
-    caffeineMg: 90, caffeineRegular: true, napPossible: true,
+    caffeineMg: 95, caffeineRegular: true, napPossible: true,
   });
   const [scr, setScr] = useState<ScreenerAnswers>(emptyScreener);
   const set = (patch: Partial<OnboardingForm>) => setForm({ ...form, ...patch });
@@ -39,10 +39,10 @@ export function Onboarding({ onDone }: { onDone: (p: Profile, s: ScreenerResult)
       <label className="fld">Сколько кофеина обычно за раз
         <select value={form.caffeineMg} onChange={e=>set({ caffeineMg: Number(e.target.value) })}>
           <option value={0}>Не пью кофеин</option>
-          <option value={40}>Чай или кола (~40 мг)</option>
-          <option value={90}>Чашка кофе — кофемашина, капучино, американо (~90 мг)</option>
-          <option value={180}>Крепкий / двойной / большая кружка (~180 мг)</option>
-          <option value={300}>Энергетик или очень крепкий (~300 мг)</option>
+          <option value={35}>Кола или зелёный чай (~35 мг)</option>
+          <option value={60}>Чёрный чай, растворимый кофе или 1 эспрессо (~60 мг)</option>
+          <option value={95}>Чашка кофе 200–250 мл или банка Red Bull 250 мл (~95 мг)</option>
+          <option value={150}>Двойной кофе или большой энергетик 0.5 л (~150 мг)</option>
         </select>
       </label>
       <p className="muted small">Не знаешь мг — просто выбери, что похоже на твою чашку.</p>
