@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import type { Profile, DayLog, DayMode, DayToggles } from "../index.js";
 import { planDay } from "../index.js";
 import { toPlanView } from "./viewModel.js";
+import { enableNotifications } from "./notifications.js";
 
 // "03:00" после полуночи -> "27:00" (движок считает минуты от полуночи дня)
 function crunchStr(hm: string): string {
@@ -15,6 +16,7 @@ export function Today({ profile, history }: { profile: Profile; history: DayLog[
   const [crunchEndHM, setCrunchEndHM] = useState("03:00");
   const [toggles, setToggles] = useState<DayToggles>({});
   const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
+  const [notifMsg, setNotifMsg] = useState("");
   const today = new Date().toISOString().slice(0, 10);
 
   const view = useMemo(() => {
@@ -39,6 +41,9 @@ export function Today({ profile, history }: { profile: Profile; history: DayLog[
           <div className="small">{view.readiness.priorityRU}</div>
         </div>
       </header>
+
+      <button className="chip" onClick={async () => setNotifMsg(await enableNotifications())}>🔔 Включить напоминания</button>
+      {notifMsg && <p className="muted small">{notifMsg}</p>}
 
       <div className="chips">
         <button className={mode === "normal" ? "chip on" : "chip"} onClick={() => setMode("normal")}>Обычный день</button>

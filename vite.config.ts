@@ -10,6 +10,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
+      workbox: { importScripts: ["push-sw.js"] },
       manifest: {
         name: "pospat — бодрость на доступном сне",
         short_name: "pospat",
