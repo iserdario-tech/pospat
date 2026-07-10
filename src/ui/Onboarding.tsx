@@ -11,7 +11,7 @@ const emptyScreener: ScreenerAnswers = {
 export function Onboarding({ onDone }: { onDone: (p: Profile, s: ScreenerResult) => void }) {
   const [form, setForm] = useState<OnboardingForm>({
     wakeHM: "07:00", bedHM: "23:00", chronotype: "intermediate",
-    caffeineMg: 200, caffeineRegular: true, napPossible: true, goal: "alertness",
+    caffeineMg: 90, caffeineRegular: true, napPossible: true, goal: "alertness",
   });
   const [scr, setScr] = useState<ScreenerAnswers>(emptyScreener);
   const set = (patch: Partial<OnboardingForm>) => setForm({ ...form, ...patch });
@@ -35,10 +35,16 @@ export function Onboarding({ onDone }: { onDone: (p: Profile, s: ScreenerResult)
           <option value="late">Сова</option>
         </select>
       </label>
-      <label className="fld">Обычная доза кофеина за раз, мг
-        <input type="number" min={0} step={50} value={form.caffeineMg}
-          onChange={e=>set({ caffeineMg: Number(e.target.value) })} />
+      <label className="fld">Сколько кофеина обычно за раз
+        <select value={form.caffeineMg} onChange={e=>set({ caffeineMg: Number(e.target.value) })}>
+          <option value={0}>Не пью кофеин</option>
+          <option value={40}>Чай / кола</option>
+          <option value={90}>Чашка кофе (кофемашина, капучино, американо)</option>
+          <option value={180}>Крепкий / двойной / большая кружка</option>
+          <option value={300}>Энергетик / очень крепкий</option>
+        </select>
       </label>
+      <p className="muted small">Не знаешь мг — просто выбери, что похоже на твою чашку.</p>
       <label className="chk"><input type="checkbox" checked={form.caffeineRegular}
         onChange={e=>set({ caffeineRegular: e.target.checked })} /> Пью кофеин ежедневно</label>
       <label className="chk"><input type="checkbox" checked={form.napPossible}
