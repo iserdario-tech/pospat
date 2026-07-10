@@ -1,5 +1,5 @@
 import type { Profile, DayContext, LastNight, DayLog, DayPlan, PlanWindow } from "./types.js";
-import { resolveMode, computeBedMin } from "./modes.js";
+import { computeBedMin } from "./modes.js";
 import { caffeineWindows } from "./caffeine.js";
 import { napWindow } from "./nap.js";
 import { lightWindows } from "./light.js";
@@ -10,7 +10,7 @@ export function planDay(args: {
   profile: Profile; ctx: DayContext; lastNight: LastNight; history: DayLog[];
 }): DayPlan {
   const { profile, ctx, lastNight, history } = args;
-  const mode = resolveMode(ctx, lastNight);
+  const mode = ctx.mode;
   const { wakeMin, bedMin, badNight } = computeBedMin({ profile, ctx, lastNight });
 
   const windows: PlanWindow[] = [];

@@ -1,11 +1,8 @@
-import type { Profile, DayContext, LastNight, DayMode } from "./types.js";
+import type { Profile, DayContext, LastNight } from "./types.js";
 import { parseHM } from "./time.js";
 import { DEFAULTS } from "./defaults.js";
 import { sleepDurationMin } from "./readiness.js";
 
-export function resolveMode(ctx: DayContext, _lastNight: LastNight): DayMode {
-  return ctx.mode; // в MVP режим приходит из контекста (кнопки «аврал»/«восстановление»)
-}
 export function computeBedMin(args: {
   profile: Profile; ctx: DayContext; lastNight: LastNight;
 }): { wakeMin: number; bedMin: number; badNight: boolean } {

@@ -11,6 +11,3 @@ export function fmtHM(min: number): string {
   const base = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
   return min >= 1440 ? `${base} (+1)` : base;
 }
-export const addMin = (min: number, delta: number): number => min + delta;
-export const clampMin = (min: number, lo: number, hi: number): number =>
-  Math.max(lo, Math.min(hi, min));

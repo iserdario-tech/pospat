@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveMode, computeBedMin } from "../src/modes.js";
+import { computeBedMin } from "../src/modes.js";
 import { parseHM } from "../src/time.js";
 const profile = { anchorWakeHM:"07:00", targetSleepMin:465, chronotype:"intermediate",
   caffeine:{ typicalMgPerDose:200, regularUser:true }, napPossibleByDefault:true, goal:"alertness" } as const;
