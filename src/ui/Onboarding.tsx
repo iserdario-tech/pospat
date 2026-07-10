@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { Profile, ScreenerResult, ScreenerAnswers, Chronotype, Goal } from "../index.js";
+import type { Profile, ScreenerResult, ScreenerAnswers, Chronotype } from "../index.js";
 import { runScreener } from "../index.js";
 import { buildProfile, type OnboardingForm } from "./onboardingModel.js";
 
@@ -11,7 +11,7 @@ const emptyScreener: ScreenerAnswers = {
 export function Onboarding({ onDone }: { onDone: (p: Profile, s: ScreenerResult) => void }) {
   const [form, setForm] = useState<OnboardingForm>({
     wakeHM: "07:00", bedHM: "23:00", chronotype: "intermediate",
-    caffeineMg: 90, caffeineRegular: true, napPossible: true, goal: "alertness",
+    caffeineMg: 90, caffeineRegular: true, napPossible: true,
   });
   const [scr, setScr] = useState<ScreenerAnswers>(emptyScreener);
   const set = (patch: Partial<OnboardingForm>) => setForm({ ...form, ...patch });
@@ -28,20 +28,21 @@ export function Onboarding({ onDone }: { onDone: (p: Profile, s: ScreenerResult)
       <label className="fld">Обычное время отбоя
         <input type="time" value={form.bedHM} onChange={e=>set({ bedHM: e.target.value })} />
       </label>
-      <label className="fld">Хронотип
+      <label className="fld">Когда тебя по природе тянет спать и вставать
         <select value={form.chronotype} onChange={e=>set({ chronotype: e.target.value as Chronotype })}>
-          <option value="early">Жаворонок</option>
-          <option value="intermediate">Средний</option>
-          <option value="late">Сова</option>
+          <option value="early">Рано ложусь и рано встаю (жаворонок)</option>
+          <option value="intermediate">Как большинство, средне</option>
+          <option value="late">Поздно ложусь, тяжело вставать рано (сова)</option>
         </select>
       </label>
+      <p className="muted small">Ориентируйся на выходные без будильника: когда сам засыпаешь и просыпаешься.</p>
       <label className="fld">Сколько кофеина обычно за раз
         <select value={form.caffeineMg} onChange={e=>set({ caffeineMg: Number(e.target.value) })}>
           <option value={0}>Не пью кофеин</option>
-          <option value={40}>Чай / кола</option>
-          <option value={90}>Чашка кофе (кофемашина, капучино, американо)</option>
-          <option value={180}>Крепкий / двойной / большая кружка</option>
-          <option value={300}>Энергетик / очень крепкий</option>
+          <option value={40}>Чай или кола (~40 мг)</option>
+          <option value={90}>Чашка кофе — кофемашина, капучино, американо (~90 мг)</option>
+          <option value={180}>Крепкий / двойной / большая кружка (~180 мг)</option>
+          <option value={300}>Энергетик или очень крепкий (~300 мг)</option>
         </select>
       </label>
       <p className="muted small">Не знаешь мг — просто выбери, что похоже на твою чашку.</p>
@@ -49,14 +50,6 @@ export function Onboarding({ onDone }: { onDone: (p: Profile, s: ScreenerResult)
         onChange={e=>set({ caffeineRegular: e.target.checked })} /> Пью кофеин ежедневно</label>
       <label className="chk"><input type="checkbox" checked={form.napPossible}
         onChange={e=>set({ napPossible: e.target.checked })} /> Могу вздремнуть днём</label>
-      <label className="fld">Главная цель
-        <select value={form.goal} onChange={e=>set({ goal: e.target.value as Goal })}>
-          <option value="alertness">Бодрость днём</option>
-          <option value="less_grogginess">Меньше разбитости</option>
-          <option value="regular_schedule">Выстроить режим</option>
-        </select>
-      </label>
-
       <h2>Короткий чек здоровья</h2>
       <label className="chk"><input type="checkbox" checked={scr.loudSnoringWithPauses}
         onChange={e=>setS({ loudSnoringWithPauses: e.target.checked })} /> Громкий храп с паузами дыхания</label>
@@ -65,7 +58,7 @@ export function Onboarding({ onDone }: { onDone: (p: Profile, s: ScreenerResult)
       <label className="chk"><input type="checkbox" checked={scr.legUrgeToMoveEvening}
         onChange={e=>setS({ legUrgeToMoveEvening: e.target.checked })} /> Неприятные ощущения в ногах по вечерам</label>
       <label className="chk"><input type="checkbox" checked={scr.insomnia3xWeek3Months}
-        onChange={e=>setS({ insomnia3xWeek3Months: e.target.checked })} /> Трудности со сном ≥3 ночей/нед ≥3 мес</label>
+        onChange={e=>setS({ insomnia3xWeek3Months: e.target.checked })} /> Плохо сплю (трудно заснуть или просыпаюсь) 3+ ночей в неделю — и так уже 3+ месяца</label>
       <label className="chk"><input type="checkbox" checked={scr.lowMood2Weeks}
         onChange={e=>setS({ lowMood2Weeks: e.target.checked })} /> Сниженное настроение ≥2 недель</label>
       <label className="chk"><input type="checkbox" checked={scr.selfHarmThoughts}

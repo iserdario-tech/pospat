@@ -1,9 +1,9 @@
-import type { Profile, Chronotype, Goal } from "../index.js";
+import type { Profile, Chronotype } from "../index.js";
 import { parseHM } from "../index.js";
 
 export interface OnboardingForm {
   wakeHM: string; bedHM: string; chronotype: Chronotype;
-  caffeineMg: number; caffeineRegular: boolean; napPossible: boolean; goal: Goal;
+  caffeineMg: number; caffeineRegular: boolean; napPossible: boolean;
 }
 export function buildProfile(f: OnboardingForm): Profile {
   let dur = parseHM(f.wakeHM) - parseHM(f.bedHM);
@@ -15,6 +15,6 @@ export function buildProfile(f: OnboardingForm): Profile {
     chronotype: f.chronotype,
     caffeine: { typicalMgPerDose: f.caffeineMg, regularUser: f.caffeineRegular },
     napPossibleByDefault: f.napPossible,
-    goal: f.goal,
+    goal: "alertness",
   };
 }
