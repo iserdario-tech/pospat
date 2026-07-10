@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import type { Profile, ScreenerResult, ScreenerAnswers, Chronotype } from "../index.js";
 import { runScreener } from "../index.js";
-import { buildProfile, type OnboardingForm } from "./onboardingModel.js";
+import { buildProfile, formFromProfile, type OnboardingForm } from "./onboardingModel.js";
 
 const emptyScreener: ScreenerAnswers = {
   loudSnoringWithPauses: false, daytimeSleepyDespiteEnoughSleep: false,
   legUrgeToMoveEvening: false, insomnia3xWeek3Months: false, lowMood2Weeks: false, selfHarmThoughts: false,
 };
 
-export function Onboarding({ onDone }: { onDone: (p: Profile, s: ScreenerResult) => void }) {
-  const [form, setForm] = useState<OnboardingForm>({
+export function Onboarding({ initial, onDone }: { initial?: Profile; onDone: (p: Profile, s: ScreenerResult) => void }) {
+  const [form, setForm] = useState<OnboardingForm>(initial ? formFromProfile(initial) : {
     wakeHM: "07:00", bedHM: "23:00", chronotype: "intermediate",
     caffeineMg: 95, caffeineRegular: true, napPossible: true,
   });

@@ -2,8 +2,7 @@ import type { DayPlan, Readiness, WindowKind } from "../index.js";
 import { fmtHM } from "../index.js";
 
 export interface PlanRow {
-  time: string; endTime?: string; icon: string; title: string; detail: string;
-  why: string; refs: string[]; disabled: boolean; note?: string;
+  time: string; endTime?: string; icon: string; title: string; detail: string; why: string;
 }
 export interface PlanView {
   readiness: { level: Readiness; label: string; color: string; whyRU: string; priorityRU: string };
@@ -18,13 +17,15 @@ const READINESS: Record<Readiness, { label: string; color: string }> = {
   ok: { label: "Норма", color: "#d29922" },
   in_debt: { label: "В долге сна", color: "#f85149" },
 };
+// "03:00 (+1)" -> "03:00 ночью" — понятнее, чем технический (+1)
+const nice = (min: number): string => fmtHM(min).replace(" (+1)", " ночью");
+
 export function toPlanView(plan: DayPlan): PlanView {
   const rows: PlanRow[] = plan.windows.map((w) => ({
-    time: fmtHM(w.startMin),
-    endTime: w.endMin != null ? fmtHM(w.endMin) : undefined,
+    time: nice(w.startMin),
+    endTime: w.endMin != null ? nice(w.endMin) : undefined,
     icon: ICONS[w.kind],
-    title: w.title, detail: w.detail, why: w.why, refs: w.refs,
-    disabled: !w.available, note: w.substitutedWith,
+    title: w.title, detail: w.detail, why: w.why,
   }));
   const r = READINESS[plan.readiness.level];
   return {

@@ -1,9 +1,18 @@
 import type { Profile, Chronotype } from "../index.js";
-import { parseHM } from "../index.js";
+import { parseHM, fmtHM } from "../index.js";
 
 export interface OnboardingForm {
   wakeHM: string; bedHM: string; chronotype: Chronotype;
   caffeineMg: number; caffeineRegular: boolean; napPossible: boolean;
+}
+export function formFromProfile(p: Profile): OnboardingForm {
+  let bed = parseHM(p.anchorWakeHM) - p.targetSleepMin;
+  if (bed < 0) bed += 1440;
+  return {
+    wakeHM: p.anchorWakeHM, bedHM: fmtHM(bed), chronotype: p.chronotype,
+    caffeineMg: p.caffeine.typicalMgPerDose, caffeineRegular: p.caffeine.regularUser,
+    napPossible: p.napPossibleByDefault,
+  };
 }
 export function buildProfile(f: OnboardingForm): Profile {
   let dur = parseHM(f.wakeHM) - parseHM(f.bedHM);

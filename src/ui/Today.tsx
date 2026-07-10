@@ -3,8 +3,16 @@ import type { Profile, DayLog, DayMode, DayToggles } from "../index.js";
 import { planDay } from "../index.js";
 import { toPlanView } from "./viewModel.js";
 
+// "03:00" после полуночи -> "27:00" (движок считает минуты от полуночи дня)
+function crunchStr(hm: string): string {
+  const [h, m] = hm.split(":").map(Number);
+  const hh = (h ?? 0) < 12 ? (h ?? 0) + 24 : (h ?? 0);
+  return `${hh}:${String(m ?? 0).padStart(2, "0")}`;
+}
+
 export function Today({ profile, history }: { profile: Profile; history: DayLog[] }) {
   const [mode, setMode] = useState<DayMode>("normal");
+  const [crunchEndHM, setCrunchEndHM] = useState("03:00");
   const [toggles, setToggles] = useState<DayToggles>({});
   const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
   const today = new Date().toISOString().slice(0, 10);
@@ -12,12 +20,12 @@ export function Today({ profile, history }: { profile: Profile; history: DayLog[
   const view = useMemo(() => {
     const plan = planDay({
       profile,
-      ctx: { date: today, mode, ...(mode === "crunch" ? { crunchUntilHM: "27:00" } : {}), toggles },
+      ctx: { date: today, mode, ...(mode === "crunch" ? { crunchUntilHM: crunchStr(crunchEndHM) } : {}), toggles },
       lastNight: { wokeHM: profile.anchorWakeHM, quality },
       history,
     });
     return toPlanView(plan);
-  }, [profile, history, mode, toggles, quality, today]);
+  }, [profile, history, mode, crunchEndHM, toggles, quality, today]);
 
   const t = (k: keyof DayToggles) => setToggles({ ...toggles, [k]: !toggles[k] });
 
@@ -33,13 +41,18 @@ export function Today({ profile, history }: { profile: Profile; history: DayLog[
       </header>
 
       <div className="chips">
-        <button className={mode === "normal" ? "chip on" : "chip"} onClick={() => setMode("normal")}>Обычный</button>
-        <button className={mode === "crunch" ? "chip on" : "chip"} onClick={() => setMode("crunch")}>Аврал до 03:00</button>
-        <button className={mode === "recovery" ? "chip on" : "chip"} onClick={() => setMode("recovery")}>Восстановление</button>
+        <button className={mode === "normal" ? "chip on" : "chip"} onClick={() => setMode("normal")}>Обычный день</button>
+        <button className={mode === "crunch" ? "chip on" : "chip"} onClick={() => setMode("crunch")}>Работаю допоздна</button>
+        <button className={mode === "recovery" ? "chip on" : "chip"} onClick={() => setMode("recovery")}>Отсыпаюсь</button>
       </div>
+      {mode === "crunch" && (
+        <label className="fld small">До скольких сегодня работаешь
+          <input type="time" value={crunchEndHM} onChange={e => setCrunchEndHM(e.target.value)} />
+        </label>
+      )}
       <div className="chips">
         <button className={toggles.napUnavailable ? "chip on" : "chip"} onClick={() => t("napUnavailable")}>Нельзя вздремнуть</button>
-        <button className={toggles.noBrightLight ? "chip on" : "chip"} onClick={() => t("noBrightLight")}>Нет света</button>
+        <button className={toggles.noBrightLight ? "chip on" : "chip"} onClick={() => t("noBrightLight")}>Нет дневного света</button>
         <button className={toggles.noCaffeine ? "chip on" : "chip"} onClick={() => t("noCaffeine")}>Без кофеина</button>
       </div>
       <label className="fld small">Как спалось прошлой ночью: {quality}/5
@@ -49,13 +62,12 @@ export function Today({ profile, history }: { profile: Profile; history: DayLog[
 
       <ol className="timeline">
         {view.rows.map((r, i) => (
-          <li key={i} className={r.disabled ? "row off" : "row"}>
+          <li key={i} className="row">
             <div className="row-time">{r.time}{r.endTime ? `–${r.endTime}` : ""}</div>
             <div className="row-body">
               <div className="row-title">{r.icon} {r.title}</div>
               <div className="row-detail">{r.detail}</div>
-              <div className="row-why muted small">{r.why} · {r.refs.join(", ")}</div>
-              {r.disabled && r.note && <div className="row-note small">→ {r.note}</div>}
+              <div className="row-why muted small">{r.why}</div>
             </div>
           </li>
         ))}

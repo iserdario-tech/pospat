@@ -33,3 +33,4 @@ button.primary { width: 100%; margin-top: 18px; padding: 14px; border: 0; border
 
 .flagbox { border: 1px solid #f85149; background: #2a1517; border-radius: 12px; padding: 12px; margin-bottom: 12px; font-size: 14px; }
 .flagbox ul { margin: 8px 0 0; padding-left: 18px; }
+.linkbtn { background: none; border: 0; color: #2f81f7; padding: 6px 0; cursor: pointer; font-size: 14px; }

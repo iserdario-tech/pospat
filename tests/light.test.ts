@@ -9,10 +9,9 @@ describe("light", () => {
     expect(ml.endMin).toBe(parseHM("08:00"));
     expect(ml.available).toBe(true);
   });
-  it("noBrightLight -> disabled + substitution", () => {
+  it("noBrightLight -> shows alternative action", () => {
     const w = lightWindows({ wakeMin: parseHM("07:00"), bedMin: parseHM("23:00"), toggles:{ noBrightLight:true }, recovery:false });
     const ml = w.find(x=>x.kind==="morning_light")!;
-    expect(ml.available).toBe(false);
-    expect(ml.substitutedWith).toMatch(/улиц|окн|лампа/i);
+    expect(ml.detail).toMatch(/улиц|лампа/i);
   });
 });

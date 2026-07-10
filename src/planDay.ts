@@ -25,8 +25,6 @@ export function planDay(args: {
   const readiness = computeReadiness({ profile, lastNight, history });
 
   const notesRU: string[] = [];
-  for (const w of windows) if (!w.available && w.substitutedWith)
-    notesRU.push(`${w.title}: заменено на «${w.substitutedWith}».`);
   if (mode === "crunch")
     notesRU.push("Режим аврала: сегодня минимизируем урон, завтра — день восстановления. Это долг сна.");
   if (mode === "recovery")

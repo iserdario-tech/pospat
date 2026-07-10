@@ -5,32 +5,18 @@ export function caffeineWindows(args: {
   profile: Profile; bedMin: number; mode: DayMode; toggles: DayToggles; badNight: boolean;
 }): PlanWindow[] {
   const { profile, bedMin, mode, toggles, badNight } = args;
-  if (toggles.noCaffeine) {
-    return [{
-      kind: "caffeine_last", startMin: bedMin, available: false,
-      title: "Кофеин выключен", detail: "Сегодня без кофеина",
-      why: "Ты отметил «без кофеина» — компенсируем свет+движение+нап",
-      refs: ["T6"], substitutedWith: "свет, движение, нап, гидратация",
-    }];
-  }
+  if (toggles.noCaffeine) return [];
   const large = profile.caffeine.typicalMgPerDose >= DEFAULTS.caffeineLargeMg;
   const cutoffH = mode === "recovery"
     ? DEFAULTS.caffeineCutoffRecoveryH
     : large ? DEFAULTS.caffeineCutoffLargeH : DEFAULTS.caffeineCutoffModerateH;
-  const lastMin = bedMin - cutoffH * 60;
-  const out: PlanWindow[] = [{
-    kind: "caffeine_last", startMin: lastMin, available: true,
-    title: "Последний кофеин", detail: `Последняя доза до этого времени (отсечка ${cutoffH} ч)`,
-    why: "Кофеин с периодом полувыведения ~5 ч ухудшает сон даже за часы до отбоя",
+  const extra = (badNight || mode === "recovery")
+    ? " Спал плохо — с утра можно на чашку больше." : "";
+  return [{
+    kind: "caffeine_last", startMin: bedMin - cutoffH * 60, available: true,
+    title: "Последняя чашка кофе",
+    detail: `Кофе — утром и в первой половине дня (1–2 порции). После этого времени не пей, иначе испортит сон.${extra}`,
+    why: "Кофеин выводится примерно за 5 часов, поэтому поздний кофе крадёт сон",
     refs: ["T6"],
   }];
-  if (badNight || mode === "recovery") {
-    out.push({
-      kind: "caffeine_boost", startMin: bedMin - (cutoffH + 4) * 60, available: true,
-      title: "Утренний буст", detail: "Разрешён кофеин в первой половине дня, до отсечки",
-      why: "После плохой ночи ранний кофеин помогает бодрости, не трогая ночь",
-      refs: ["T6", "T14"],
-    });
-  }
-  return out;
 }

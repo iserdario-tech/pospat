@@ -21,10 +21,10 @@ describe("planDay", () => {
     expect(p.readiness.level).toBe("in_debt");
     expect(p.windows.some(w=>w.kind==="coffee_nap")).toBe(true);
   });
-  it("napUnavailable -> note about disabled lever", () => {
+  it("napUnavailable -> a window shows the alternative action", () => {
     const p = planDay({ profile, ctx:{ date:"2026-06-28", mode:"normal", toggles:{ napUnavailable:true } },
       lastNight:{ wokeHM:"07:00", bedHM:"23:00", quality:4 }, history:[] });
-    expect(p.notesRU.join(" ")).toMatch(/нап/i);
+    expect(p.windows.some(w=>/закрыт|дыхан|прогул/i.test(w.detail))).toBe(true);
   });
   it("crunch: bedtime after work end", () => {
     const p = planDay({ profile, ctx:{ date:"2026-06-28", mode:"crunch", crunchUntilHM:"27:00", toggles:{} },

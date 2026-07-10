@@ -49,9 +49,8 @@ export interface PlanWindow {
   title: string;              // RU
   detail: string;             // RU действие
   why: string;                // RU обоснование
-  refs: string[];             // ["T7"]
-  available: boolean;         // false => заменён/выключен
-  substitutedWith?: string;   // RU пометка замены
+  refs: string[];             // внутренние коды источников (в UI не показываются)
+  available: boolean;
 }
 export type Readiness = "charged" | "ok" | "in_debt";
 export interface DayPlan {

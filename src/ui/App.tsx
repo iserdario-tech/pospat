@@ -6,23 +6,27 @@ import { loadState, saveState, type StoredState } from "./storage.js";
 
 export function App() {
   const [state, setState] = useState<StoredState | null>(() => loadState());
+  const [editing, setEditing] = useState(false);
 
-  if (!state) {
-    return <Onboarding onDone={(profile: Profile, screener: ScreenerResult) => {
-      const s: StoredState = { profile, history: [], screener };
-      saveState(s); setState(s);
+  if (!state || editing) {
+    return <Onboarding initial={state?.profile} onDone={(profile: Profile, screener: ScreenerResult) => {
+      const s: StoredState = { profile, history: state?.history ?? [], screener };
+      saveState(s); setState(s); setEditing(false);
     }} />;
   }
   return (
     <>
       {state.screener?.flagged && (
-        <div className="wrap">
+        <div className="wrap" style={{ paddingBottom: 0 }}>
           <div className="flagbox">
             <strong>Важно</strong>
             <ul>{state.screener.messagesRU.map((m, i) => <li key={i}>{m}</li>)}</ul>
           </div>
         </div>
       )}
+      <div className="wrap" style={{ paddingBottom: 0 }}>
+        <button className="linkbtn" onClick={() => setEditing(true)}>⚙︎ Изменить настройки</button>
+      </div>
       <Today profile={state.profile} history={state.history} />
     </>
   );

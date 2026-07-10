@@ -19,6 +19,6 @@ describe("viewModel", () => {
       lastNight:{ wokeHM:"07:00", bedHM:"23:00", quality:3 }, history:[] });
     const v = toPlanView(plan);
     const bed = v.rows.find(r=>r.title.toLowerCase().includes("отбой"))!;
-    expect(bed.time).toContain("(+1)");
+    expect(bed.time).toContain("ночью");
   });
 });

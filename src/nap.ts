@@ -14,10 +14,11 @@ export function napWindow(args: {
 
   if (toggles.napUnavailable) {
     return {
-      kind: "nap", startMin: start, endMin: end, available: false,
-      title: "Нап недоступен", detail: "На работе вздремнуть нельзя",
-      why: "Компенсируем: 3–5 мин с закрытыми глазами/дыхание, прогулка, дневной свет; вес восстановления — на ночь",
-      refs: ["T5"], substitutedWith: "закрыть глаза 3–5 мин / дыхание / прогулка / свет",
+      kind: "nap", startMin: start, available: true,
+      title: "Вместо дневного сна",
+      detail: "Вздремнуть нельзя — посиди 3–5 минут с закрытыми глазами или спокойно подыши, и пройдись в перерыв.",
+      why: "Даже короткий отдых и движение помогают, когда поспать не получается",
+      refs: ["T5"],
     };
   }
   const coffee = mode === "recovery" || badNight;

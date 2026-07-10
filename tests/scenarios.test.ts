@@ -9,8 +9,10 @@ describe("scenarios (public API)", () => {
       ctx:{ date:"2026-06-28", mode:"normal", toggles:{ napUnavailable:true, noBrightLight:true } },
       lastNight:{ wokeHM:"07:00", bedHM:"00:30", quality:3 }, history:[] });
     expect(p.windows.length).toBeGreaterThan(0);
-    expect(p.notesRU.length).toBeGreaterThanOrEqual(2); // нап и свет заменены
-    expect(p.windows.every(w => typeof w.why === "string" && w.why.length > 0)).toBe(true);
+    const details = p.windows.map(w => w.detail).join(" ");
+    expect(details).toMatch(/улиц|лампа/i);          // свет заменён альтернативой
+    expect(details).toMatch(/закрыт|дыхан|прогул/i); // нап заменён альтернативой
+    expect(p.windows.every(w => w.why.length > 0)).toBe(true);
   });
   it("recovery day after crunch: coffee_nap present, caffeine cutoff earlier than normal", () => {
     const rec = planDay({ profile, ctx:{ date:"2026-06-29", mode:"recovery", toggles:{} },

@@ -12,10 +12,9 @@ describe("nap", () => {
     expect(w.endMin! - w.startMin).toBe(20);
     expect(w.available).toBe(true);
   });
-  it("napUnavailable -> disabled with substitution", () => {
+  it("napUnavailable -> shows alternative action", () => {
     const w = napWindow({ profile, wakeMin: parseHM("07:00"), bedMin: parseHM("23:00"), mode:"normal", toggles:{ napUnavailable:true }, badNight:false })!;
-    expect(w.available).toBe(false);
-    expect(w.substitutedWith).toMatch(/закрыт|дыхан|прогулк/i);
+    expect(w.detail).toMatch(/закрыт|дыхан|прогул/i);
   });
   it("recovery/bad night -> coffee_nap preset", () => {
     const w = napWindow({ profile, wakeMin: parseHM("07:00"), bedMin: parseHM("23:00"), mode:"recovery", toggles:{}, badNight:true })!;

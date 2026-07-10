@@ -8,10 +8,9 @@ export function lightWindows(args: {
   const morning: PlanWindow = toggles.noBrightLight
     ? {
         kind: "morning_light", startMin: wakeMin, endMin: wakeMin + DEFAULTS.morningLightWindowMin,
-        available: false, title: "Яркого света нет",
-        detail: "Выйти на улицу в перерыв / посветлее экран / лампа",
-        why: "Без яркого света эффект слабее, но частично компенсируется", refs: ["T7"],
-        substitutedWith: "улица в перерыв / ярче экран / лампа",
+        available: true, title: "Вместо яркого света",
+        detail: "Яркого света нет — выйди на улицу в перерыв или включи лампу поярче.",
+        why: "Свет по утрам бодрит и настраивает внутренние часы; без него эффект слабее", refs: ["T7"],
       }
     : {
         kind: "morning_light", startMin: wakeMin, endMin: wakeMin + DEFAULTS.morningLightWindowMin,

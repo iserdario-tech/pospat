@@ -16,10 +16,8 @@ describe("caffeine", () => {
     const last = w.find(x=>x.kind==="caffeine_last")!;
     expect(last.startMin).toBe(parseHM("13:00")); // 23:00 - 10h
   });
-  it("noCaffeine toggle -> disabled with substitution", () => {
+  it("noCaffeine toggle -> no caffeine window", () => {
     const w = caffeineWindows({ profile, bedMin: parseHM("23:00"), mode:"normal", toggles:{ noCaffeine:true }, badNight:false });
-    const last = w.find(x=>x.kind==="caffeine_last")!;
-    expect(last.available).toBe(false);
-    expect(last.substitutedWith).toContain("свет");
+    expect(w).toHaveLength(0);
   });
 });
