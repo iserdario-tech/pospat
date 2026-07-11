@@ -34,6 +34,7 @@ button.primary { width: 100%; margin-top: 18px; padding: 14px; border: 0; border
 .flagbox { border: 1px solid #f85149; background: #2a1517; border-radius: 12px; padding: 12px; margin-bottom: 12px; font-size: 14px; }
 .flagbox ul { margin: 8px 0 0; padding-left: 18px; }
 .linkbtn { background: none; border: 0; color: #2f81f7; padding: 6px 0; cursor: pointer; font-size: 14px; }
+.morning { margin: 8px 0; padding: 10px 0; border-top: 1px solid #1c2230; border-bottom: 1px solid #1c2230; }
 .tips { margin: 12px 0 4px; border-top: 1px solid #1c2230; padding-top: 12px; }
 .tips summary { cursor: pointer; font-weight: 600; }
 .tips-body p { font-size: 14px; color: #c9d1e0; margin: 10px 0; line-height: 1.45; }

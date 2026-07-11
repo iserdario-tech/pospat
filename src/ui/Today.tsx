@@ -11,23 +11,25 @@ function crunchStr(hm: string): string {
   return `${hh}:${String(m ?? 0).padStart(2, "0")}`;
 }
 
-export function Today({ profile, history }: { profile: Profile; history: DayLog[] }) {
+export function Today({ profile, history, onLog }: { profile: Profile; history: DayLog[]; onLog: (log: DayLog) => void }) {
   const [mode, setMode] = useState<DayMode>("normal");
   const [crunchEndHM, setCrunchEndHM] = useState("03:00");
   const [toggles, setToggles] = useState<DayToggles>({});
+  const [wokeHM, setWokeHM] = useState(profile.anchorWakeHM);
   const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [notifMsg, setNotifMsg] = useState("");
+  const [savedMsg, setSavedMsg] = useState("");
   const today = new Date().toISOString().slice(0, 10);
 
   const view = useMemo(() => {
     const plan = planDay({
       profile,
       ctx: { date: today, mode, ...(mode === "crunch" ? { crunchUntilHM: crunchStr(crunchEndHM) } : {}), toggles },
-      lastNight: { wokeHM: profile.anchorWakeHM, quality },
+      lastNight: { wokeHM, quality },
       history,
     });
     return toPlanView(plan);
-  }, [profile, history, mode, crunchEndHM, toggles, quality, today]);
+  }, [profile, history, mode, crunchEndHM, toggles, wokeHM, quality, today]);
 
   const t = (k: keyof DayToggles) => setToggles({ ...toggles, [k]: !toggles[k] });
 
@@ -60,10 +62,18 @@ export function Today({ profile, history }: { profile: Profile; history: DayLog[
         <button className={toggles.noBrightLight ? "chip on" : "chip"} onClick={() => t("noBrightLight")}>Нет дневного света</button>
         <button className={toggles.noCaffeine ? "chip on" : "chip"} onClick={() => t("noCaffeine")}>Без кофеина</button>
       </div>
-      <label className="fld small">Как спалось прошлой ночью: {quality}/5
-        <input type="range" min={1} max={5} value={quality}
-          onChange={e => setQuality(Number(e.target.value) as 1 | 2 | 3 | 4 | 5)} />
-      </label>
+      <div className="morning">
+        <div className="small muted" style={{ marginBottom: 4 }}>Утренняя отметка — записывай каждый день, так «регулярность» и «готовность» станут точными.</div>
+        <label className="fld small">Во сколько встал сегодня
+          <input type="time" value={wokeHM} onChange={e => { setWokeHM(e.target.value); setSavedMsg(""); }} />
+        </label>
+        <label className="fld small">Как спалось: {quality}/5
+          <input type="range" min={1} max={5} value={quality}
+            onChange={e => { setQuality(Number(e.target.value) as 1 | 2 | 3 | 4 | 5); setSavedMsg(""); }} />
+        </label>
+        <button className="chip" onClick={() => { onLog({ date: today, wokeHM, quality }); setSavedMsg("Записано ✓"); }}>Записать сегодня</button>
+        {savedMsg && <span className="small muted" style={{ marginLeft: 8 }}>{savedMsg}</span>}
+      </div>
 
       <ol className="timeline">
         {view.rows.map((r, i) => (
