@@ -1,6 +1,9 @@
-// Публичный VAPID-ключ (приватный — на сервере-отправителе, добавим следующим шагом)
-const VAPID_PUBLIC = "BPfPCikNLwAyTfK_9aNHSmPU-KAWyTe2rZF_WV29CEJzZU9oyJztXF_WQEtJLt6b7aea9ElXhF8868FI9Wd7T0M";
-const BACKEND_URL = ""; // пусто -> подписка пока только сохраняется локально
+import type { Profile } from "../index.js";
+
+// Публичный VAPID-ключ (пара к приватному JWK на Worker — см. app/.vapid.json)
+const VAPID_PUBLIC = "BPedDaxa5IPF3-WSZ-EyAats5dXnGuJMaLapSRCmElsllWNGFk7NcMyS-z-MEzM5iNtJMtEIxhTEUFqJL81fgo4";
+// URL задеплоенного Worker; пусто -> подписка только создаётся локально (сервера ещё нет).
+const BACKEND_URL = "";
 
 export function urlBase64ToUint8Array(b64: string): Uint8Array {
   const pad = "=".repeat((4 - (b64.length % 4)) % 4);
@@ -11,7 +14,7 @@ export function urlBase64ToUint8Array(b64: string): Uint8Array {
   return arr;
 }
 
-export async function enableNotifications(): Promise<string> {
+export async function enableNotifications(profile: Profile): Promise<string> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window))
     return "Уведомления не поддерживаются этим браузером.";
   const perm = await Notification.requestPermission();
@@ -24,7 +27,7 @@ export async function enableNotifications(): Promise<string> {
   if (BACKEND_URL) {
     await fetch(BACKEND_URL + "/subscribe", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify(sub),
+      body: JSON.stringify({ subscription: sub, profile, tzOffsetMin: -new Date().getTimezoneOffset() }),
     });
     return "Готово! Напоминания включены.";
   }

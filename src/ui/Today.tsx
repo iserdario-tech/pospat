@@ -42,7 +42,7 @@ export function Today({ profile, history }: { profile: Profile; history: DayLog[
         </div>
       </header>
 
-      <button className="chip" onClick={async () => setNotifMsg(await enableNotifications())}>🔔 Включить напоминания</button>
+      <button className="chip" onClick={async () => setNotifMsg(await enableNotifications(profile))}>🔔 Включить напоминания</button>
       {notifMsg && <p className="muted small">{notifMsg}</p>}
 
       <div className="chips">
