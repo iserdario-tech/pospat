@@ -2,8 +2,8 @@ import type { Profile } from "../index.js";
 
 // Публичный VAPID-ключ (пара к приватному JWK на Worker — см. app/.vapid.json)
 const VAPID_PUBLIC = "BPedDaxa5IPF3-WSZ-EyAats5dXnGuJMaLapSRCmElsllWNGFk7NcMyS-z-MEzM5iNtJMtEIxhTEUFqJL81fgo4";
-// URL задеплоенного Worker; пусто -> подписка только создаётся локально (сервера ещё нет).
-const BACKEND_URL = "";
+// URL задеплоенного Worker (Cloudflare).
+const BACKEND_URL = "https://pospat-push.pospat.workers.dev";
 
 export function urlBase64ToUint8Array(b64: string): Uint8Array {
   const pad = "=".repeat((4 - (b64.length % 4)) % 4);

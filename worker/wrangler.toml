@@ -5,7 +5,7 @@ compatibility_date = "2024-11-01"
 # После `wrangler kv namespace create SUBS` вставь сюда выданный id:
 [[kv_namespaces]]
 binding = "SUBS"
-id = "PUT_KV_ID_HERE"
+id = "f3a653d6771b48e0993782a5b0a68db3"
 
 # Рассылка раз в 5 минут (проверяет, чьё окно наступило)
 [triggers]

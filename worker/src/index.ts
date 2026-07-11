@@ -33,6 +33,19 @@ export default {
         profile: body.profile,
         tzOffsetMin: body.tzOffsetMin ?? 0,
       }));
+      // приветственный пуш — мгновенное подтверждение, что доставка работает
+      try {
+        const { endpoint, headers: h, body: pb } = await buildPushHTTPRequest({
+          privateJWK: JSON.parse(env.VAPID_PRIVATE),
+          subscription: body.subscription!,
+          message: {
+            payload: { title: "pospat", body: "Напоминания включены ✅" },
+            adminContact: "mailto:pospat@pospat.app",
+            options: { ttl: 600, urgency: "high" },
+          },
+        });
+        await fetch(endpoint, { method: "POST", headers: h, body: pb });
+      } catch (_) { /* не критично */ }
       return new Response("ok", { headers: CORS });
     }
     return new Response("pospat push", { headers: CORS });
