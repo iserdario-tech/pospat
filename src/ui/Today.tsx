@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import type { Profile, DayLog, DayMode, DayToggles } from "../index.js";
-import { planDay } from "../index.js";
+import { planDay, weeklyInsight, streakDays } from "../index.js";
 import { toPlanView } from "./viewModel.js";
 import { enableNotifications } from "./notifications.js";
 
@@ -11,11 +11,20 @@ function crunchStr(hm: string): string {
   return `${hh}:${String(m ?? 0).padStart(2, "0")}`;
 }
 
+// склонение: 1 день, 2 дня, 5 дней
+function plural(n: number, one: string, few: string, many: string): string {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+  return many;
+}
+
 export function Today({ profile, history, onLog }: { profile: Profile; history: DayLog[]; onLog: (log: DayLog) => void }) {
   const [mode, setMode] = useState<DayMode>("normal");
   const [crunchEndHM, setCrunchEndHM] = useState("03:00");
   const [toggles, setToggles] = useState<DayToggles>({});
   const [wokeHM, setWokeHM] = useState(profile.anchorWakeHM);
+  const [bedHM, setBedHM] = useState("");
   const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [notifMsg, setNotifMsg] = useState("");
   const [savedMsg, setSavedMsg] = useState("");
@@ -25,11 +34,14 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
     const plan = planDay({
       profile,
       ctx: { date: today, mode, ...(mode === "crunch" ? { crunchUntilHM: crunchStr(crunchEndHM) } : {}), toggles },
-      lastNight: { wokeHM, quality },
+      lastNight: { wokeHM, quality, ...(bedHM ? { bedHM } : {}) },
       history,
     });
     return toPlanView(plan);
-  }, [profile, history, mode, crunchEndHM, toggles, wokeHM, quality, today]);
+  }, [profile, history, mode, crunchEndHM, toggles, wokeHM, bedHM, quality, today]);
+
+  const insight = useMemo(() => weeklyInsight(history, today, profile.targetSleepMin), [history, today, profile.targetSleepMin]);
+  const streak = useMemo(() => streakDays(history, today), [history, today]);
 
   const t = (k: keyof DayToggles) => setToggles({ ...toggles, [k]: !toggles[k] });
 
@@ -62,18 +74,38 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
         <button className={toggles.noBrightLight ? "chip on" : "chip"} onClick={() => t("noBrightLight")}>Нет дневного света</button>
         <button className={toggles.noCaffeine ? "chip on" : "chip"} onClick={() => t("noCaffeine")}>Без кофеина</button>
       </div>
+      <div className="chips">
+        <button className={toggles.hadAlcohol ? "chip on" : "chip"} onClick={() => t("hadAlcohol")}>🍷 Вчера был алкоголь</button>
+      </div>
       <div className="morning">
         <div className="small muted" style={{ marginBottom: 4 }}>Утренняя отметка — записывай каждый день, так «регулярность» и «готовность» станут точными.</div>
         <label className="fld small">Во сколько встал сегодня
           <input type="time" value={wokeHM} onChange={e => { setWokeHM(e.target.value); setSavedMsg(""); }} />
         </label>
+        <label className="fld small">Во сколько лёг вчера (если помнишь)
+          <input type="time" value={bedHM} onChange={e => { setBedHM(e.target.value); setSavedMsg(""); }} />
+        </label>
         <label className="fld small">Как спалось: {quality}/5
           <input type="range" min={1} max={5} value={quality}
             onChange={e => { setQuality(Number(e.target.value) as 1 | 2 | 3 | 4 | 5); setSavedMsg(""); }} />
         </label>
-        <button className="chip" onClick={() => { onLog({ date: today, wokeHM, quality }); setSavedMsg("Записано ✓"); }}>Записать сегодня</button>
+        <button className="chip" onClick={() => { onLog({ date: today, wokeHM, quality, ...(bedHM ? { bedHM } : {}) }); setSavedMsg("Записано ✓"); }}>Записать сегодня</button>
         {savedMsg && <span className="small muted" style={{ marginLeft: 8 }}>{savedMsg}</span>}
       </div>
+
+      <section className="week">
+        <div className="week-head">
+          <b>За неделю</b>
+          {streak > 0 && <span className="streak">🔥 {streak} {plural(streak, "день", "дня", "дней")} подряд</span>}
+        </div>
+        <div className="week-stats small">
+          <span>Отмечено: {insight.daysLogged}/7</span>
+          <span>Регулярность: {insight.regularity}/100</span>
+          {insight.avgQuality != null && <span>Качество: {insight.avgQuality}/5</span>}
+          {insight.avgSleepMin != null && <span>Средний сон: {(insight.avgSleepMin / 60).toFixed(1)} ч</span>}
+        </div>
+        <div className="small muted" style={{ marginTop: 6 }}>{insight.summaryRU}</div>
+      </section>
 
       <ol className="timeline">
         {view.rows.map((r, i) => (

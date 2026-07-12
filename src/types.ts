@@ -21,6 +21,7 @@ export interface DayToggles {
   driving?: boolean;
   eveningBusy?: boolean;      // рано лечь нельзя
   weekend?: boolean;
+  hadAlcohol?: boolean;       // вчера был алкоголь → сон менее восстановительный
 }
 export interface DayContext {
   date: string;               // ISO "2026-06-28"

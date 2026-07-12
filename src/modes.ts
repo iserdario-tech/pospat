@@ -9,7 +9,7 @@ export function computeBedMin(args: {
   const { profile, ctx, lastNight } = args;
   const wakeMin = parseHM(profile.anchorWakeHM);
   const dur = sleepDurationMin(lastNight, profile.targetSleepMin);
-  const badNight = lastNight.quality <= 2 || dur < profile.targetSleepMin - 90;
+  const badNight = lastNight.quality <= 2 || dur < profile.targetSleepMin - 90 || !!ctx.toggles.hadAlcohol;
 
   // базовый отбой = подъём следующего дня минус цель сна
   let bedMin = wakeMin + 1440 - profile.targetSleepMin;

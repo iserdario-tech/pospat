@@ -22,9 +22,11 @@ export function planDay(args: {
 
   windows.sort((a, b) => a.startMin - b.startMin);
 
-  const readiness = computeReadiness({ profile, lastNight, history });
+  const readiness = computeReadiness({ profile, lastNight, history, hadAlcohol: ctx.toggles.hadAlcohol });
 
   const notesRU: string[] = [];
+  if (ctx.toggles.hadAlcohol)
+    notesRU.push("Вчера был алкоголь: вторая половина сна пострадала (меньше глубокого и REM). Сегодня — вода и утренний свет, без позднего кофе; относись как к лёгкому долгу сна.");
   if (mode === "crunch")
     notesRU.push("Режим аврала: сегодня минимизируем урон, завтра — день восстановления. Это долг сна.");
   if (mode === "recovery")
