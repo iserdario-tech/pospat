@@ -34,6 +34,7 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
   const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(loggedToday?.quality ?? 3);
   const [notifMsg, setNotifMsg] = useState("");
   const [savedMsg, setSavedMsg] = useState("");
+  const notifOn = typeof Notification !== "undefined" && Notification.permission === "granted";
 
   useEffect(() => { saveDayDraft({ date: today, mode, crunchEndHM, toggles }); }, [today, mode, crunchEndHM, toggles]);
 
@@ -63,7 +64,9 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
         </div>
       </header>
 
-      <button className="chip" onClick={async () => setNotifMsg(await enableNotifications(profile))}>🔔 Включить напоминания</button>
+      <button className={notifOn ? "chip on" : "chip"} onClick={async () => setNotifMsg(await enableNotifications(profile))}>
+        {notifOn ? "🔔 Напоминания включены" : "🔔 Включить напоминания"}
+      </button>
       {notifMsg && <p className="muted small">{notifMsg}</p>}
 
       <div className="chips">
@@ -109,7 +112,7 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
         </div>
         <div className="week-stats small">
           <span>Отмечено: {insight.daysLogged}/7</span>
-          <span>Регулярность: {insight.regularity}/100</span>
+          {insight.daysLogged >= 2 && <span>Регулярность: {insight.regularity}/100</span>}
           {insight.avgQuality != null && <span>Качество: {insight.avgQuality}/5</span>}
           {insight.avgSleepMin != null && <span>Средний сон: {(insight.avgSleepMin / 60).toFixed(1)} ч</span>}
           {insight.alcoholNights > 0 && <span>🍷 {insight.alcoholNights} {plural(insight.alcoholNights, "ночь", "ночи", "ночей")} с алкоголем</span>}
