@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { Profile, DayLog, DayMode, DayToggles } from "../index.js";
 import { planDay, weeklyInsight, streakDays } from "../index.js";
 import { toPlanView } from "./viewModel.js";
+import { loadDayDraft, saveDayDraft } from "./storage.js";
 import { enableNotifications } from "./notifications.js";
 
 // "03:00" после полуночи -> "27:00" (движок считает минуты от полуночи дня)
@@ -20,17 +21,20 @@ function plural(n: number, one: string, few: string, many: string): string {
 }
 
 export function Today({ profile, history, onLog }: { profile: Profile; history: DayLog[]; onLog: (log: DayLog) => void }) {
-  const [mode, setMode] = useState<DayMode>("normal");
-  const [crunchEndHM, setCrunchEndHM] = useState("03:00");
-  const [toggles, setToggles] = useState<DayToggles>({});
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const [draft] = useState(() => loadDayDraft(today)); // контекст дня из прошлого запуска (если за сегодня)
+  const [mode, setMode] = useState<DayMode>(draft?.mode ?? "normal");
+  const [crunchEndHM, setCrunchEndHM] = useState(draft?.crunchEndHM ?? "03:00");
+  const [toggles, setToggles] = useState<DayToggles>(draft?.toggles ?? {});
   const [wokeHM, setWokeHM] = useState(profile.anchorWakeHM);
   const [bedHM, setBedHM] = useState("");
   const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [notifMsg, setNotifMsg] = useState("");
   const [savedMsg, setSavedMsg] = useState("");
-  const now = new Date();
-  const today = now.toISOString().slice(0, 10);
-  const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  useEffect(() => { saveDayDraft({ date: today, mode, crunchEndHM, toggles }); }, [today, mode, crunchEndHM, toggles]);
 
   const view = useMemo(() => {
     const plan = planDay({

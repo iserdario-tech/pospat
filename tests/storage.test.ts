@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { saveState, loadState, type StoredState } from "../src/ui/storage.js";
+import { saveState, loadState, saveDayDraft, loadDayDraft, type StoredState } from "../src/ui/storage.js";
 function memStore() {
   const m = new Map<string,string>();
   return { getItem:(k:string)=>m.get(k) ?? null, setItem:(k:string,v:string)=>{m.set(k,v);} };
@@ -14,4 +14,11 @@ describe("storage", () => {
     expect(loadState(store)?.profile.anchorWakeHM).toBe("07:00");
   });
   it("empty -> null", () => { expect(loadState(memStore())).toBeNull(); });
+  it("day draft round-trips for the same date only", () => {
+    const store = memStore();
+    saveDayDraft({ date:"2026-07-12", mode:"crunch", crunchEndHM:"04:00", toggles:{ hadAlcohol:true } }, store);
+    expect(loadDayDraft("2026-07-12", store)?.mode).toBe("crunch");
+    expect(loadDayDraft("2026-07-12", store)?.crunchEndHM).toBe("04:00");
+    expect(loadDayDraft("2026-07-13", store)).toBeNull(); // вчерашний контекст не тянем
+  });
 });
