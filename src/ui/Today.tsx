@@ -28,7 +28,9 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
   const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [notifMsg, setNotifMsg] = useState("");
   const [savedMsg, setSavedMsg] = useState("");
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const nowMin = now.getHours() * 60 + now.getMinutes();
 
   const view = useMemo(() => {
     const plan = planDay({
@@ -37,8 +39,8 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
       lastNight: { wokeHM, quality, ...(bedHM ? { bedHM } : {}) },
       history,
     });
-    return toPlanView(plan);
-  }, [profile, history, mode, crunchEndHM, toggles, wokeHM, bedHM, quality, today]);
+    return toPlanView(plan, nowMin);
+  }, [profile, history, mode, crunchEndHM, toggles, wokeHM, bedHM, quality, today, nowMin]);
 
   const insight = useMemo(() => weeklyInsight(history, today, profile.targetSleepMin), [history, today, profile.targetSleepMin]);
   const streak = useMemo(() => streakDays(history, today), [history, today]);
@@ -108,9 +110,18 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
         <div className="small muted" style={{ marginTop: 6 }}>{insight.summaryRU}</div>
       </section>
 
+      {view.nextIdx != null ? (
+        <div className="nextup">
+          <span className="nextup-label">Сейчас / дальше</span>
+          <span className="nextup-body">{view.rows[view.nextIdx]!.icon} {view.rows[view.nextIdx]!.title} · {view.rows[view.nextIdx]!.time}</span>
+        </div>
+      ) : (
+        <div className="nextup"><span className="nextup-body">На сегодня всё — пора отдыхать 🌙</span></div>
+      )}
+
       <ol className="timeline">
         {view.rows.map((r, i) => (
-          <li key={i} className="row">
+          <li key={i} className={"row" + (r.past ? " past" : "") + (i === view.nextIdx ? " now" : "")}>
             <div className="row-time">{r.time}{r.endTime ? `–${r.endTime}` : ""}</div>
             <div className="row-body">
               <div className="row-title">{r.icon} {r.title}</div>
