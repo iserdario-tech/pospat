@@ -25,7 +25,7 @@ export function Onboarding({ initial, onDone }: { initial?: Profile; onDone: (p:
       <label className="fld">Обычное время подъёма
         <input type="time" value={form.wakeHM} onChange={e=>set({ wakeHM: e.target.value })} />
       </label>
-      <label className="fld">Обычное время отбоя
+      <label className="fld">Обычное время, когда ложишься спать
         <input type="time" value={form.bedHM} onChange={e=>set({ bedHM: e.target.value })} />
       </label>
       <label className="fld">Когда тебя по природе тянет спать и вставать
@@ -50,7 +50,7 @@ export function Onboarding({ initial, onDone }: { initial?: Profile; onDone: (p:
         onChange={e=>set({ caffeineRegular: e.target.checked })} /> Пью кофеин ежедневно</label>
       <label className="chk"><input type="checkbox" checked={form.napPossible}
         onChange={e=>set({ napPossible: e.target.checked })} /> Могу вздремнуть днём</label>
-      <h2>Короткий чек здоровья</h2>
+      <h2>Короткая проверка здоровья</h2>
       <label className="chk"><input type="checkbox" checked={scr.loudSnoringWithPauses}
         onChange={e=>setS({ loudSnoringWithPauses: e.target.checked })} /> Громкий храп с паузами дыхания</label>
       <label className="chk"><input type="checkbox" checked={scr.daytimeSleepyDespiteEnoughSleep}
@@ -60,9 +60,9 @@ export function Onboarding({ initial, onDone }: { initial?: Profile; onDone: (p:
       <label className="chk"><input type="checkbox" checked={scr.insomnia3xWeek3Months}
         onChange={e=>setS({ insomnia3xWeek3Months: e.target.checked })} /> Плохо сплю (трудно заснуть или просыпаюсь) 3+ ночей в неделю — и так уже 3+ месяца</label>
       <label className="chk"><input type="checkbox" checked={scr.lowMood2Weeks}
-        onChange={e=>setS({ lowMood2Weeks: e.target.checked })} /> Сниженное настроение ≥2 недель</label>
+        onChange={e=>setS({ lowMood2Weeks: e.target.checked })} /> Подавленное настроение 2 недели и дольше</label>
       <label className="chk"><input type="checkbox" checked={scr.selfHarmThoughts}
-        onChange={e=>setS({ selfHarmThoughts: e.target.checked })} /> Есть мысли о самоповреждении</label>
+        onChange={e=>setS({ selfHarmThoughts: e.target.checked })} /> Есть мысли причинить себе вред</label>
 
       <button className="primary" onClick={() => onDone(buildProfile(form), runScreener(scr))}>
         Построить план

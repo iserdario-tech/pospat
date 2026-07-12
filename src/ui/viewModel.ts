@@ -13,9 +13,9 @@ const ICONS: Record<WindowKind, string> = {
   coffee_nap: "☕😴", afternoon_dip: "🚶", warm_shower: "🚿", winddown: "🌙", target_bed: "🛌",
 };
 const READINESS: Record<Readiness, { label: string; color: string }> = {
-  charged: { label: "Заряжен", color: "#3fb950" },
+  charged: { label: "Бодрый", color: "#3fb950" },
   ok: { label: "Норма", color: "#d29922" },
-  in_debt: { label: "В долге сна", color: "#f85149" },
+  in_debt: { label: "Недосып", color: "#f85149" },
 };
 // "03:00 (+1)" -> "03:00 ночью" — понятнее, чем технический (+1)
 const nice = (min: number): string => fmtHM(min).replace(" (+1)", " ночью");

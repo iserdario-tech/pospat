@@ -6,7 +6,7 @@ export const DEFAULTS = {
   napSlotMin: 20,                // длина окна нап (слот)
   napNotLaterBeforeBedH: 9,
   morningLightWindowMin: 60,     // окно "первый час"
-  morningLightDoText: "20–30 мин яркого света / на улицу",
+  morningLightDoText: "Побудь 20–30 минут на ярком свету, лучше на улице.",
   warmShowerBeforeBedMin: 90,
   winddownBeforeBedMin: 60,
   weekendWakeShiftCapMin: 60,

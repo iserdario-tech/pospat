@@ -18,7 +18,7 @@ describe("viewModel", () => {
     const plan = planDay({ profile, ctx:{ date:"2026-06-28", mode:"crunch", crunchUntilHM:"27:00", toggles:{} },
       lastNight:{ wokeHM:"07:00", bedHM:"23:00", quality:3 }, history:[] });
     const v = toPlanView(plan);
-    const bed = v.rows.find(r=>r.title.toLowerCase().includes("отбой"))!;
+    const bed = v.rows.find(r=>r.title.toLowerCase().includes("спать"))!;
     expect(bed.time).toContain("ночью");
   });
 });
