@@ -89,7 +89,7 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
           <input type="range" min={1} max={5} value={quality}
             onChange={e => { setQuality(Number(e.target.value) as 1 | 2 | 3 | 4 | 5); setSavedMsg(""); }} />
         </label>
-        <button className="chip" onClick={() => { onLog({ date: today, wokeHM, quality, ...(bedHM ? { bedHM } : {}) }); setSavedMsg("Записано ✓"); }}>Записать сегодня</button>
+        <button className="chip" onClick={() => { onLog({ date: today, wokeHM, quality, ...(bedHM ? { bedHM } : {}), ...(toggles.hadAlcohol ? { hadAlcohol: true } : {}) }); setSavedMsg("Записано ✓"); }}>Записать сегодня</button>
         {savedMsg && <span className="small muted" style={{ marginLeft: 8 }}>{savedMsg}</span>}
       </div>
 
@@ -103,6 +103,7 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
           <span>Регулярность: {insight.regularity}/100</span>
           {insight.avgQuality != null && <span>Качество: {insight.avgQuality}/5</span>}
           {insight.avgSleepMin != null && <span>Средний сон: {(insight.avgSleepMin / 60).toFixed(1)} ч</span>}
+          {insight.alcoholNights > 0 && <span>🍷 {insight.alcoholNights} {plural(insight.alcoholNights, "ночь", "ночи", "ночей")} с алкоголем</span>}
         </div>
         <div className="small muted" style={{ marginTop: 6 }}>{insight.summaryRU}</div>
       </section>

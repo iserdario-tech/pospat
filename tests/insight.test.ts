@@ -6,6 +6,7 @@ import { planDay } from "../src/planDay.js";
 const profile = { anchorWakeHM: "07:00", targetSleepMin: 465, chronotype: "intermediate",
   caffeine: { typicalMgPerDose: 200, regularUser: true }, napPossibleByDefault: true, goal: "alertness" } as const;
 const day = (iso: string, wokeHM: string, quality: 1|2|3|4|5, bedHM?: string) => ({ date: iso, wokeHM, quality, ...(bedHM ? { bedHM } : {}) });
+const drinkDay = (iso: string) => ({ date: iso, wokeHM: "07:00", quality: 2 as const, hadAlcohol: true });
 
 describe("weeklyInsight", () => {
   it("empty -> nudge to log", () => {
@@ -29,6 +30,12 @@ describe("weeklyInsight", () => {
   it("regularity high when wake times stable", () => {
     const hist = [10,11,12].map(d => day(`2026-07-${d}`, "07:00", 3));
     expect(weeklyInsight(hist, "2026-07-12", 465).regularity).toBe(100);
+  });
+  it("counts alcohol nights in last 7 and warns at 3+", () => {
+    const hist = ["2026-07-10","2026-07-11","2026-07-12"].map(drinkDay);
+    const w = weeklyInsight(hist, "2026-07-12", 465);
+    expect(w.alcoholNights).toBe(3);
+    expect(w.summaryRU).toMatch(/алкоголь/i);
   });
 });
 

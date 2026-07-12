@@ -39,6 +39,7 @@ export interface DayLog {      // история для регулярности
   wokeHM: string;
   bedHM?: string;
   quality: 1 | 2 | 3 | 4 | 5;
+  hadAlcohol?: boolean;        // была ли выпивка в эту ночь
 }
 export type WindowKind =
   | "morning_light" | "caffeine_last" | "caffeine_boost" | "nap" | "coffee_nap"

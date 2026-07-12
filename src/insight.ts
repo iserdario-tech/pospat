@@ -14,6 +14,7 @@ export interface WeeklyInsight {
   regularity: number;         // 0..100 (по подъёмам)
   avgQuality: number | null;  // среднее качество сна, 1..5
   avgSleepMin: number | null; // среднее по дням, где записан отбой
+  alcoholNights: number;      // ночей с алкоголем за последние 7
   summaryRU: string;          // человеческий вывод
 }
 
@@ -21,18 +22,23 @@ export function weeklyInsight(history: DayLog[], todayISO: string, targetSleepMi
   const last7 = history.filter(h => { const d = daysAgo(todayISO, h.date); return d >= 0 && d < 7; });
   const daysLogged = last7.length;
   const withBed = last7.filter(h => h.bedHM);
+  const alcoholNights = last7.filter(h => h.hadAlcohol).length;
+  const reg = regularityScore(history);
   const summaryRU = daysLogged < 2
     ? "Отмечайся каждое утро — через пару дней покажу тренд по сну."
-    : regularityScore(history) >= 80
-      ? "Режим стабильный — это лучший рычаг бодрости. Так держать."
-      : "Подъёмы «гуляют». Стабильное время подъёма даст больше бодрости, чем кофе.";
+    : alcoholNights >= 3
+      ? "Алкоголь 3+ ночи за неделю заметно режет глубокий и REM-сон. Меньше выпивки ближе ко сну — больше бодрости."
+      : reg >= 80
+        ? "Режим стабильный — это лучший рычаг бодрости. Так держать."
+        : "Подъёмы «гуляют». Стабильное время подъёма даст больше бодрости, чем кофе.";
   return {
     daysLogged,
-    regularity: regularityScore(history),
+    regularity: reg,
     avgQuality: daysLogged ? Math.round(mean(last7.map(h => h.quality)) * 10) / 10 : null,
     avgSleepMin: withBed.length
       ? Math.round(mean(withBed.map(h => sleepDurationMin(h, targetSleepMin))))
       : null,
+    alcoholNights,
     summaryRU,
   };
 }
