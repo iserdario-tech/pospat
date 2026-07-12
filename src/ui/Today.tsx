@@ -28,9 +28,10 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
   const [mode, setMode] = useState<DayMode>(draft?.mode ?? "normal");
   const [crunchEndHM, setCrunchEndHM] = useState(draft?.crunchEndHM ?? "03:00");
   const [toggles, setToggles] = useState<DayToggles>(draft?.toggles ?? {});
-  const [wokeHM, setWokeHM] = useState(profile.anchorWakeHM);
-  const [bedHM, setBedHM] = useState("");
-  const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
+  const loggedToday = history.find((h) => h.date === today); // уже отмечался сегодня?
+  const [wokeHM, setWokeHM] = useState(loggedToday?.wokeHM ?? profile.anchorWakeHM);
+  const [bedHM, setBedHM] = useState(loggedToday?.bedHM ?? "");
+  const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(loggedToday?.quality ?? 3);
   const [notifMsg, setNotifMsg] = useState("");
   const [savedMsg, setSavedMsg] = useState("");
 
@@ -95,8 +96,10 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
           <input type="range" min={1} max={5} value={quality}
             onChange={e => { setQuality(Number(e.target.value) as 1 | 2 | 3 | 4 | 5); setSavedMsg(""); }} />
         </label>
-        <button className="chip" onClick={() => { onLog({ date: today, wokeHM, quality, ...(bedHM ? { bedHM } : {}), ...(toggles.hadAlcohol ? { hadAlcohol: true } : {}) }); setSavedMsg("Записано ✓"); }}>Записать сегодня</button>
-        {savedMsg && <span className="small muted" style={{ marginLeft: 8 }}>{savedMsg}</span>}
+        <button className="chip" onClick={() => { onLog({ date: today, wokeHM, quality, ...(bedHM ? { bedHM } : {}), ...(toggles.hadAlcohol ? { hadAlcohol: true } : {}) }); setSavedMsg("Сохранено ✓"); }}>{loggedToday ? "Обновить отметку" : "Записать сегодня"}</button>
+        {savedMsg
+          ? <span className="small muted" style={{ marginLeft: 8 }}>{savedMsg}</span>
+          : loggedToday && <span className="small muted" style={{ marginLeft: 8 }}>Отмечено сегодня ✓</span>}
       </div>
 
       <section className="week">
