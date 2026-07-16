@@ -48,6 +48,17 @@ button.primary { width: 100%; margin-top: 18px; padding: 14px; border: 0; border
 .streak { color: #d29922; font-size: 13px; }
 .week-stats { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; color: #c9d1e0; }
 .week-stats span { font-variant-numeric: tabular-nums; }
+.coach { margin: 12px 0 4px; border-top: 1px solid #1c2230; padding-top: 12px; }
+.coach summary { cursor: pointer; font-weight: 600; }
+.coach-body { margin-top: 8px; }
+.bubble { padding: 10px 12px; border-radius: 12px; margin: 8px 0; font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
+.bubble.me { background: #2f81f7; color: #fff; margin-left: 24px; }
+.bubble.coachmsg { background: #161b22; border: 1px solid #2a2f3a; margin-right: 24px; }
+.coach-ask { display: flex; gap: 8px; margin-top: 10px; }
+.coach-ask input { flex: 1; min-width: 0; padding: 10px; border-radius: 8px; border: 1px solid #2a2f3a;
+  background: #161b22; color: #e6e9ef; font: inherit; }
+.coach-ask button:disabled { opacity: .5; }
+
 .tips { margin: 12px 0 4px; border-top: 1px solid #1c2230; padding-top: 12px; }
 .tips summary { cursor: pointer; font-weight: 600; }
 .tips-body p { font-size: 14px; color: #c9d1e0; margin: 10px 0; line-height: 1.45; }

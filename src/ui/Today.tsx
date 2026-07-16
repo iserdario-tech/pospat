@@ -4,6 +4,7 @@ import { planDay, weeklyInsight, streakDays } from "../index.js";
 import { toPlanView } from "./viewModel.js";
 import { loadDayDraft, saveDayDraft } from "./storage.js";
 import { enableNotifications } from "./notifications.js";
+import { Coach } from "./Coach.js";
 
 // "03:00" после полуночи -> "27:00" (движок считает минуты от полуночи дня)
 function crunchStr(hm: string): string {
@@ -50,6 +51,19 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
 
   const insight = useMemo(() => weeklyInsight(history, today, profile.targetSleepMin), [history, today, profile.targetSleepMin]);
   const streak = useMemo(() => streakDays(history, today), [history, today]);
+
+  const MODE_RU: Record<DayMode, string> = { normal: "обычный день", crunch: "работает допоздна", recovery: "день восстановления" };
+  const coachContext = useMemo(() => [
+    `Режим: ${MODE_RU[mode]}.`,
+    `Готовность: ${view.readiness.label} (${view.readiness.whyRU}).`,
+    view.nextIdx != null ? `Ближайший шаг плана: ${view.rows[view.nextIdx]!.title} в ${view.rows[view.nextIdx]!.time}.` : "План на сегодня уже пройден.",
+    `Обычный подъём: ${profile.anchorWakeHM}. Цель сна: ${(profile.targetSleepMin / 60).toFixed(1)} ч.`,
+    toggles.hadAlcohol ? "Вчера был алкоголь." : "",
+    toggles.napUnavailable ? "Днём поспать не может." : "",
+    toggles.noCaffeine ? "Без кофеина." : "",
+    toggles.noBrightLight ? "Нет дневного света." : "",
+    `За неделю: отмечено ${insight.daysLogged}/7 дней${insight.avgSleepMin != null ? `, средний сон ${(insight.avgSleepMin / 60).toFixed(1)} ч` : ""}${insight.alcoholNights > 0 ? `, ночей с алкоголем ${insight.alcoholNights}` : ""}.`,
+  ].filter(Boolean).join("\n"), [mode, view, profile, toggles, insight]);
 
   const t = (k: keyof DayToggles) => setToggles({ ...toggles, [k]: !toggles[k] });
 
@@ -145,6 +159,8 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
       {view.notes.length > 0 && (
         <ul className="notes small">{view.notes.map((n, i) => <li key={i}>{n}</li>)}</ul>
       )}
+
+      <Coach contextRU={coachContext} />
 
       <details className="tips">
         <summary>💡 Как лучше спать</summary>

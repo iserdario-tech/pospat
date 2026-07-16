@@ -2,10 +2,22 @@ import { buildPushHTTPRequest } from "@pushforge/builder";
 import type { Profile } from "../../src/index.js";
 import { planDay } from "../../src/index.js";
 import { dueWindows } from "../../src/push.js";
+import { askCoach, type CoachTurn } from "./coach.js";
 
 interface Env {
   SUBS: KVNamespace;
-  VAPID_PRIVATE: string; // приватный VAPID-ключ в формате JWK (JSON-строка), задаётся секретом
+  VAPID_PRIVATE: string;      // приватный VAPID-ключ (JWK-строка), секрет
+  ANTHROPIC_API_KEY: string;  // ключ Anthropic для коуча, секрет
+}
+
+const COACH_DAILY_LIMIT = 40; // эндпоинт публичный — без лимита любой сожжёт кредиты владельца
+// ponytail: счётчик в KV по IP; KV не строго консистентен, для потолка расходов этого хватает.
+async function overCoachLimit(env: Env, ip: string): Promise<boolean> {
+  const key = `rl:${ip}:${new Date().toISOString().slice(0, 10)}`;
+  const used = Number((await env.SUBS.get(key)) ?? 0);
+  if (used >= COACH_DAILY_LIMIT) return true;
+  await env.SUBS.put(key, String(used + 1), { expirationTtl: 172800 });
+  return false;
 }
 interface StoredSub {
   subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
@@ -19,6 +31,7 @@ const CORS: Record<string, string> = {
   "access-control-allow-methods": "POST, OPTIONS",
   "access-control-allow-headers": "content-type",
 };
+const JSON_CORS: Record<string, string> = { ...CORS, "content-type": "application/json" };
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
@@ -48,6 +61,29 @@ export default {
       } catch (_) { /* не критично */ }
       return new Response("ok", { headers: CORS });
     }
+
+    if (req.method === "POST" && url.pathname === "/coach") {
+      if (!env.ANTHROPIC_API_KEY)
+        return new Response(JSON.stringify({ error: "Коуч пока не подключён." }), { status: 503, headers: JSON_CORS });
+      const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
+      if (await overCoachLimit(env, ip))
+        return new Response(JSON.stringify({ error: "На сегодня хватит вопросов — продолжим завтра." }), { status: 429, headers: JSON_CORS });
+      const body = (await req.json()) as { messages?: CoachTurn[]; contextRU?: string };
+      const messages = (body.messages ?? []).slice(-10); // держим короткий хвост: дешевле и достаточно
+      if (!messages.length || messages.some((m) => !m.content?.trim()))
+        return new Response(JSON.stringify({ error: "bad request" }), { status: 400, headers: JSON_CORS });
+      try {
+        const reply = await askCoach({
+          apiKey: env.ANTHROPIC_API_KEY,
+          messages,
+          contextRU: body.contextRU ?? "Ничего не известно.",
+        });
+        return new Response(JSON.stringify({ reply }), { headers: JSON_CORS });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Коуч сейчас недоступен. Попробуй позже." }), { status: 502, headers: JSON_CORS });
+      }
+    }
+
     return new Response("pospat push", { headers: CORS });
   },
 
