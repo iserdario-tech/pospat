@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { saveState, loadState, saveDayDraft, loadDayDraft, type StoredState } from "../src/ui/storage.js";
+import { saveState, loadState, saveDayDraft, loadDayDraft, exportAll, importAll, type StoredState } from "../src/ui/storage.js";
 function memStore() {
   const m = new Map<string,string>();
   return { getItem:(k:string)=>m.get(k) ?? null, setItem:(k:string,v:string)=>{m.set(k,v);} };
@@ -20,5 +20,16 @@ describe("storage", () => {
     expect(loadDayDraft("2026-07-12", store)?.mode).toBe("crunch");
     expect(loadDayDraft("2026-07-12", store)?.crunchEndHM).toBe("04:00");
     expect(loadDayDraft("2026-07-13", store)).toBeNull(); // вчерашний контекст не тянем
+  });
+  it("export -> import round-trips the whole state", () => {
+    const src = memStore(); const dst = memStore();
+    saveState({ profile, history: [{ date:"2026-07-12", wokeHM:"07:15", quality:4 }], screener:null }, src);
+    const restored = importAll(exportAll(src), dst);
+    expect(restored?.history[0]?.wokeHM).toBe("07:15");
+    expect(loadState(dst)?.history[0]?.wokeHM).toBe("07:15"); // и записалось в хранилище
+  });
+  it("import rejects a foreign / broken file", () => {
+    expect(importAll('{"hello":"world"}', memStore())).toBeNull();
+    expect(importAll("не json", memStore())).toBeNull();
   });
 });

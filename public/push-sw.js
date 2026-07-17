@@ -7,13 +7,15 @@ self.addEventListener("push", (event) => {
     body: data.body || "",
     icon: "/pospat/icon-192.png",
     badge: "/pospat/icon-192.png",
+    data: data.data || {},
   }));
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/pospat/";
   event.waitUntil(self.clients.matchAll({ type: "window" }).then((cs) => {
     const c = cs.find((x) => "focus" in x);
-    return c ? c.focus() : self.clients.openWindow("/pospat/");
+    return c ? c.focus() : self.clients.openWindow(url);
   }));
 });

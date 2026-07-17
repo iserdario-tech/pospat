@@ -29,3 +29,20 @@ export function loadDayDraft(date: string, store: StorageLike = defaultStore()):
   if (!raw) return null;
   try { const d = JSON.parse(raw) as DayDraft; return d?.date === date ? d : null; } catch { return null; }
 }
+
+// Бэкап: всё хранится в localStorage, при очистке браузера пропадёт. Экспорт/импорт — страховка.
+export function exportAll(store: StorageLike = defaultStore()): string {
+  return JSON.stringify({ app: "pospat", v: 1, state: store.getItem(KEY) }, null, 2);
+}
+// Импорт: принимает файл экспорта. Возвращает восстановленное состояние или null (кривой файл).
+export function importAll(text: string, store: StorageLike = defaultStore()): StoredState | null {
+  try {
+    const parsed = JSON.parse(text);
+    const stateStr: string | null = parsed?.state ?? null;
+    if (!stateStr) return null;
+    const state = JSON.parse(stateStr) as StoredState;
+    if (!state?.profile?.anchorWakeHM) return null; // минимальная валидация: это точно наш профиль
+    store.setItem(KEY, stateStr);
+    return state;
+  } catch { return null; }
+}

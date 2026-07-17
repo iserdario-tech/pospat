@@ -38,6 +38,8 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
   const notifOn = typeof Notification !== "undefined" && Notification.permission === "granted";
 
   useEffect(() => { saveDayDraft({ date: today, mode, crunchEndHM, toggles }); }, [today, mode, crunchEndHM, toggles]);
+  // пришли по утреннему пушу «как спалось?» → сразу к отметке
+  useEffect(() => { if (location.hash === "#mark") setTimeout(() => document.getElementById("mark")?.scrollIntoView({ block: "center" }), 0); }, []);
 
   const view = useMemo(() => {
     const plan = planDay({
@@ -101,7 +103,7 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
       <div className="chips">
         <button className={toggles.hadAlcohol ? "chip on" : "chip"} onClick={() => t("hadAlcohol")}>🍷 Вчера был алкоголь</button>
       </div>
-      <div className="morning">
+      <div className="morning" id="mark">
         <div className="small muted" style={{ marginBottom: 4 }}>Утренняя отметка — записывай каждый день, так «регулярность» и «готовность» станут точными.</div>
         <label className="fld small">Во сколько встал сегодня
           <input type="time" value={wokeHM} onChange={e => { setWokeHM(e.target.value); setSavedMsg(""); }} />

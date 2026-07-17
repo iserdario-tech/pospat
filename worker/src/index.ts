@@ -1,8 +1,8 @@
 import { buildPushHTTPRequest } from "@pushforge/builder";
 import type { Profile } from "../../src/index.js";
-import { planDay } from "../../src/index.js";
-import { dueWindows } from "../../src/push.js";
-import { askCoach, type CoachTurn } from "./coach.js";
+import { planDay, parseHM } from "../../src/index.js";
+import { dueWindows, checkinDue } from "../../src/push.js";
+import { coachStream, type CoachTurn } from "./coach.js";
 
 interface Env {
   SUBS: KVNamespace;
@@ -71,8 +71,8 @@ export default {
       if (!messages.length || messages.some((m) => !m.content?.trim()))
         return new Response(JSON.stringify({ error: "bad request" }), { status: 400, headers: JSON_CORS });
       try {
-        const reply = await askCoach({ ai: env.AI, messages, contextRU: body.contextRU ?? "Ничего не известно." });
-        return new Response(JSON.stringify({ reply }), { headers: JSON_CORS });
+        const stream = await coachStream({ ai: env.AI, messages, contextRU: body.contextRU ?? "Ничего не известно." });
+        return new Response(stream, { headers: { ...CORS, "content-type": "text/event-stream" } });
       } catch (e) {
         console.error("coach error", String((e as any)?.message ?? e));
         return new Response(JSON.stringify({ error: "Коуч сейчас недоступен. Попробуй позже." }), { status: 502, headers: JSON_CORS });
@@ -100,25 +100,29 @@ export default {
         lastNight: { wokeHM: s.profile.anchorWakeHM, quality: 3 },
         history: [],
       });
-      const due = dueWindows(plan.windows, minOfDay, 5);
-      const sent = s.sent && s.sent.date === localDate ? s.sent : { date: localDate, kinds: [] as string[] };
+      // Что шлём в это окно: шаги плана + утренняя отметка «как спалось?»
+      const outgoing: { kind: string; title: string; body: string; data?: { url: string } }[] =
+        dueWindows(plan.windows, minOfDay, 5).map((w) => ({ kind: w.kind, title: w.title, body: w.detail }));
+      if (checkinDue(minOfDay, parseHM(s.profile.anchorWakeHM)))
+        outgoing.push({ kind: "checkin", title: "Как спалось?", body: "Отметь подъём — план на день подстроится под тебя.", data: { url: "/pospat/#mark" } });
 
+      const sent = s.sent && s.sent.date === localDate ? s.sent : { date: localDate, kinds: [] as string[] };
       let changed = false;
-      for (const w of due) {
-        if (sent.kinds.includes(w.kind)) continue;
+      for (const o of outgoing) {
+        if (sent.kinds.includes(o.kind)) continue;
         try {
           const { endpoint, headers, body } = await buildPushHTTPRequest({
             privateJWK,
             subscription: s.subscription,
             message: {
-              payload: { title: w.title, body: w.detail },
+              payload: { title: o.title, body: o.body, ...(o.data ? { data: o.data } : {}) },
               adminContact: "mailto:pospat@pospat.app",
               options: { ttl: 3600, urgency: "normal" },
             },
           });
           const res = await fetch(endpoint, { method: "POST", headers, body });
           if (res.status === 404 || res.status === 410) { await env.SUBS.delete(k.name); }
-          else { sent.kinds.push(w.kind); changed = true; }
+          else { sent.kinds.push(o.kind); changed = true; }
         } catch (_) { /* пропускаем сбойную отправку */ }
       }
       if (changed) { s.sent = sent; await env.SUBS.put(k.name, JSON.stringify(s)); }

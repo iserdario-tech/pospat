@@ -22,7 +22,7 @@ const SYSTEM_RULES = `Ты — коуч в приложении pospat. Помо
 - Понятно ДАЖЕ РЕБЁНКУ. Никакого жаргона: не пиши «циркадный», «REM», «инерция сна», «мг кофеина»,
   «wind-down». Пиши «внутренние часы», «глубокий сон», «разбитость», «чашка кофе», «подготовка ко сну».
 - НИКОГДА не показывай внутренние коды из базы знаний (T5, S-001 и подобные) — это служебные пометки.
-- Коротко: 2–4 предложения. Один-два конкретных шага, а не лекция.
+- ОЧЕНЬ коротко: максимум 3 коротких предложения, один-два конкретных шага. Без списков и заголовков. Не лекция.
 - Числа бери только из базы знаний ниже. Не выдумывай цифры. Не знаешь — скажи честно.
 
 БАЗА ЗНАНИЙ (итоги научного обзора, 223 источника). Опирайся на неё:
@@ -30,17 +30,17 @@ ${KNOWLEDGE}`;
 
 export interface CoachTurn { role: "user" | "assistant"; content: string }
 
-export async function askCoach(args: {
+// Стрим ответа (SSE от Workers AI) — коуч «печатает» сразу, а не молчит ~15 сек.
+export async function coachStream(args: {
   ai: Ai;
   messages: CoachTurn[];
   contextRU: string;
-}): Promise<string> {
+}): Promise<ReadableStream> {
   const system = `${SYSTEM_RULES}\n\nСЕЙЧАС У ЧЕЛОВЕКА ТАК:\n${args.contextRU}`;
-  const res = (await args.ai.run(MODEL as keyof AiModels, {
+  return (await args.ai.run(MODEL as keyof AiModels, {
     messages: [{ role: "system", content: system }, ...args.messages],
-    max_tokens: 400,
+    max_tokens: 350,
     temperature: 0.4, // ниже — меньше выдумок, держится базы
-  } as any)) as { response?: string };
-  const reply = (res.response ?? "").trim();
-  return reply || "Что-то я замолчал. Спроси ещё раз, пожалуйста.";
+    stream: true,
+  } as any)) as unknown as ReadableStream;
 }
