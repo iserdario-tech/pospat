@@ -6,12 +6,12 @@ import { askCoach, type CoachTurn } from "./coach.js";
 
 interface Env {
   SUBS: KVNamespace;
-  VAPID_PRIVATE: string;      // приватный VAPID-ключ (JWK-строка), секрет
-  ANTHROPIC_API_KEY: string;  // ключ Anthropic для коуча, секрет
+  VAPID_PRIVATE: string;  // приватный VAPID-ключ (JWK-строка), секрет
+  AI: Ai;                 // бесплатная ИИ Cloudflare для коуча (биндинг из wrangler.toml)
 }
 
-const COACH_DAILY_LIMIT = 40; // эндпоинт публичный — без лимита любой сожжёт кредиты владельца
-// ponytail: счётчик в KV по IP; KV не строго консистентен, для потолка расходов этого хватает.
+const COACH_DAILY_LIMIT = 40; // эндпоинт публичный — без лимита любой выест бесплатную квоту ИИ за день
+// ponytail: счётчик в KV по IP; KV не строго консистентен, для потолка запросов этого хватает.
 async function overCoachLimit(env: Env, ip: string): Promise<boolean> {
   const key = `rl:${ip}:${new Date().toISOString().slice(0, 10)}`;
   const used = Number((await env.SUBS.get(key)) ?? 0);
@@ -63,8 +63,6 @@ export default {
     }
 
     if (req.method === "POST" && url.pathname === "/coach") {
-      if (!env.ANTHROPIC_API_KEY)
-        return new Response(JSON.stringify({ error: "Коуч пока не подключён." }), { status: 503, headers: JSON_CORS });
       const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
       if (await overCoachLimit(env, ip))
         return new Response(JSON.stringify({ error: "На сегодня хватит вопросов — продолжим завтра." }), { status: 429, headers: JSON_CORS });
@@ -73,13 +71,10 @@ export default {
       if (!messages.length || messages.some((m) => !m.content?.trim()))
         return new Response(JSON.stringify({ error: "bad request" }), { status: 400, headers: JSON_CORS });
       try {
-        const reply = await askCoach({
-          apiKey: env.ANTHROPIC_API_KEY,
-          messages,
-          contextRU: body.contextRU ?? "Ничего не известно.",
-        });
+        const reply = await askCoach({ ai: env.AI, messages, contextRU: body.contextRU ?? "Ничего не известно." });
         return new Response(JSON.stringify({ reply }), { headers: JSON_CORS });
       } catch (e) {
+        console.error("coach error", String((e as any)?.message ?? e));
         return new Response(JSON.stringify({ error: "Коуч сейчас недоступен. Попробуй позже." }), { status: 502, headers: JSON_CORS });
       }
     }

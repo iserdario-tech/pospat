@@ -8,7 +8,6 @@
     "dry": "wrangler deploy --dry-run --outdir dist-dry"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.111.0",
     "@pushforge/builder": "^2.0.5"
   },
   "devDependencies": {

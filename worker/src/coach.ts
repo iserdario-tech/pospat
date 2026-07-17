@@ -1,8 +1,9 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { KNOWLEDGE } from "./knowledge.js";
 
-// Стабильный префикс: знания + правила. Меняется редко → кэшируется (Opus 4.8: минимум 4096 токенов).
-// Пользовательский контекст идёт отдельным блоком ПОСЛЕ точки кэширования, иначе кэш ломается каждый запрос.
+// Бесплатная модель Cloudflare Workers AI. Хорошо тянет русский; квоту не превысить в деньги
+// (на free-плане при исчерпании — просто временная ошибка, не счёт).
+const MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+
 const SYSTEM_RULES = `Ты — коуч в приложении pospat. Помогаешь человеку чувствовать себя максимально бодро
 на том сне, который ему реально доступен.
 
@@ -17,11 +18,11 @@ const SYSTEM_RULES = `Ты — коуч в приложении pospat. Помо
   обратиться за помощью к близким и врачу или в кризисную службу. Никаких советов по сну в этот момент.
 
 КАК ГОВОРИТЬ (главное правило приложения):
-- По-русски, тепло, на «ты».
+- Отвечай ТОЛЬКО по-русски, тепло, на «ты».
 - Понятно ДАЖЕ РЕБЁНКУ. Никакого жаргона: не пиши «циркадный», «REM», «инерция сна», «мг кофеина»,
   «wind-down». Пиши «внутренние часы», «глубокий сон», «разбитость», «чашка кофе», «подготовка ко сну».
 - НИКОГДА не показывай внутренние коды из базы знаний (T5, S-001 и подобные) — это служебные пометки.
-- Коротко: обычно 2–4 предложения. Один-два конкретных шага, а не лекция.
+- Коротко: 2–4 предложения. Один-два конкретных шага, а не лекция.
 - Числа бери только из базы знаний ниже. Не выдумывай цифры. Не знаешь — скажи честно.
 
 БАЗА ЗНАНИЙ (итоги научного обзора, 223 источника). Опирайся на неё:
@@ -30,26 +31,16 @@ ${KNOWLEDGE}`;
 export interface CoachTurn { role: "user" | "assistant"; content: string }
 
 export async function askCoach(args: {
-  apiKey: string;
+  ai: Ai;
   messages: CoachTurn[];
-  contextRU: string;   // человекочитаемый контекст: профиль, план дня, готовность
+  contextRU: string;
 }): Promise<string> {
-  const client = new Anthropic({ apiKey: args.apiKey });
-  const response = await client.messages.create({
-    model: "claude-opus-4-8",
-    max_tokens: 1000,
-    thinking: { type: "adaptive" },
-    output_config: { effort: "low" }, // коротким ответам коуча хватает; держим задержку низкой
-    system: [
-      { type: "text", text: SYSTEM_RULES, cache_control: { type: "ephemeral" } },
-      { type: "text", text: `СЕЙЧАС У ЧЕЛОВЕКА ТАК:\n${args.contextRU}` },
-    ],
-    messages: args.messages,
-  });
-  if (response.stop_reason === "refusal") return "Не смогу это обсудить. Спроси про сон и бодрость — тут помогу.";
-  return response.content
-    .filter((b): b is Anthropic.TextBlock => b.type === "text")
-    .map((b) => b.text)
-    .join("\n")
-    .trim() || "Что-то я замолчал. Спроси ещё раз, пожалуйста.";
+  const system = `${SYSTEM_RULES}\n\nСЕЙЧАС У ЧЕЛОВЕКА ТАК:\n${args.contextRU}`;
+  const res = (await args.ai.run(MODEL as keyof AiModels, {
+    messages: [{ role: "system", content: system }, ...args.messages],
+    max_tokens: 400,
+    temperature: 0.4, // ниже — меньше выдумок, держится базы
+  } as any)) as { response?: string };
+  const reply = (res.response ?? "").trim();
+  return reply || "Что-то я замолчал. Спроси ещё раз, пожалуйста.";
 }
