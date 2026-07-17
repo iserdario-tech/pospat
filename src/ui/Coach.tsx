@@ -67,9 +67,9 @@ export function Coach({ contextRU }: { contextRU: string }) {
         <p className="small muted">Спроси про сон и бодрость своими словами. Отвечает по научной базе приложения. Это не врач.</p>
 
         {turns.map((t, i) => (
-          <div key={i} className={t.role === "user" ? "bubble me" : "bubble coachmsg"}>{t.content}</div>
+          <div key={i} className={t.role === "user" ? "bubble me" : "bubble coachmsg"}>{t.content.replace(/\*\*/g, "")}</div>
         ))}
-        {busy && <div className="bubble coachmsg">{streaming || <span className="muted">Думаю…</span>}</div>}
+        {busy && <div className="bubble coachmsg">{streaming ? streaming.replace(/\*\*/g, "") : <span className="muted">Думаю…</span>}</div>}
         {err && <div className="small" style={{ color: "#f85149" }}>{err}</div>}
         <div ref={endRef} />
 
