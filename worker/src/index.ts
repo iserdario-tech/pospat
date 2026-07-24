@@ -23,9 +23,9 @@ interface StoredSub {
   subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
   profile: Profile;
   tzOffsetMin: number;
-  sent?: { date: string; kinds: string[] };
   // контекст дня из приложения: чтобы пуши шли по тому же плану, что человек видит на экране
   day?: { date: string; mode: DayMode; toggles: DayToggles; crunchUntilHM?: string };
+  // «что уже отправлено сегодня» лежит в отдельном ключе sent:<endpoint> — см. scheduled()
 }
 
 const CORS: Record<string, string> = {
@@ -51,7 +51,6 @@ export default {
         profile: body.profile,
         tzOffsetMin: body.tzOffsetMin ?? 0,
         ...(body.day ? { day: body.day } : existing?.day ? { day: existing.day } : {}),
-        ...(existing?.sent ? { sent: existing.sent } : {}), // не теряем «что уже отправлено сегодня»
       }));
       if (existing) return new Response("ok", { headers: CORS }); // тихая синхронизация — без приветствия
       // приветственный пуш — мгновенное подтверждение, что доставка работает (только при первой подписке)
@@ -93,11 +92,15 @@ export default {
   async scheduled(_evt: ScheduledController, env: Env): Promise<void> {
     const privateJWK = JSON.parse(env.VAPID_PRIVATE);
     const nowUtcMin = Math.floor(Date.now() / 60000);
-    const list = await env.SUBS.list();
+    // В этом же KV лежат счётчики лимита коуча (rl:…) и отметки об отправке (sent:…).
+    // Ключ подписки — всегда push-endpoint, то есть https://… Без фильтра крон падал бы
+    // на первом же служебном ключе и не рассылал НИЧЕГО.
+    const list = await env.SUBS.list({ prefix: "https://" });
     for (const k of list.keys) {
       const raw = await env.SUBS.get(k.name);
       if (!raw) continue;
       const s = JSON.parse(raw) as StoredSub;
+      if (!s?.profile?.anchorWakeHM) continue; // битая/чужая запись — пропускаем, а не роняем рассылку
       const localMin = nowUtcMin + (s.tzOffsetMin ?? 0);
       const minOfDay = ((localMin % 1440) + 1440) % 1440;
       const localDate = new Date(localMin * 60000).toISOString().slice(0, 10);
@@ -121,7 +124,13 @@ export default {
       if (checkinDue(minOfDay, parseHM(s.profile.anchorWakeHM)))
         outgoing.push({ kind: "checkin", title: "Как спалось?", body: "Отметь подъём — план на день подстроится под тебя.", data: { url: "/pospat/#mark" } });
 
-      const sent = s.sent && s.sent.date === localDate ? s.sent : { date: localDate, kinds: [] as string[] };
+      // «что уже отправлено сегодня» держим отдельным ключом: эту запись пишет только крон,
+      // а профиль/контекст дня — только /subscribe. Иначе два писателя затирали бы друг друга
+      // (KV не сразу консистентен), и человек получал бы повторные пуши.
+      const sentKey = `sent:${k.name}`;
+      const prevRaw = await env.SUBS.get(sentKey);
+      const prev = prevRaw ? (JSON.parse(prevRaw) as { date: string; kinds: string[] }) : null;
+      const sent = prev && prev.date === localDate ? prev : { date: localDate, kinds: [] as string[] };
       let changed = false;
       for (const o of outgoing) {
         if (sent.kinds.includes(o.kind)) continue;
@@ -140,7 +149,7 @@ export default {
           else { sent.kinds.push(o.kind); changed = true; }
         } catch (_) { /* пропускаем сбойную отправку */ }
       }
-      if (changed) { s.sent = sent; await env.SUBS.put(k.name, JSON.stringify(s)); }
+      if (changed) await env.SUBS.put(sentKey, JSON.stringify(sent), { expirationTtl: 172800 });
     }
   },
 };
