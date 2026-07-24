@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import type { Profile, DayLog, DayMode, DayToggles } from "../index.js";
+import type { Profile, DayLog, DayMode, DayToggles, ScreenerResult } from "../index.js";
 import { planDay, weeklyInsight, streakDays } from "../index.js";
 import { toPlanView } from "./viewModel.js";
 import { loadDayDraft, saveDayDraft } from "./storage.js";
-import { enableNotifications } from "./notifications.js";
+import { enableNotifications, syncPushContext } from "./notifications.js";
 import { Coach } from "./Coach.js";
 
 // "03:00" после полуночи -> "27:00" (движок считает минуты от полуночи дня)
@@ -37,7 +37,7 @@ function plural(n: number, one: string, few: string, many: string): string {
   return many;
 }
 
-export function Today({ profile, history, onLog }: { profile: Profile; history: DayLog[]; onLog: (log: DayLog) => void }) {
+export function Today({ profile, history, screener, onLog }: { profile: Profile; history: DayLog[]; screener?: ScreenerResult | null; onLog: (log: DayLog) => void }) {
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
   const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -54,6 +54,13 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
   const notifOn = typeof Notification !== "undefined" && Notification.permission === "granted";
 
   useEffect(() => { saveDayDraft({ date: today, mode, crunchEndHM, toggles }); }, [today, mode, crunchEndHM, toggles]);
+  // контекст дня — на Worker, иначе пуши шли бы по «обычному дню», а не по тому, что на экране
+  useEffect(() => {
+    const id = setTimeout(() => void syncPushContext(profile, {
+      date: today, mode, toggles, ...(mode === "crunch" ? { crunchUntilHM: crunchStr(crunchEndHM) } : {}),
+    }), 800); // дебаунс: тумблеры щёлкают пачками
+    return () => clearTimeout(id);
+  }, [profile, today, mode, crunchEndHM, toggles]);
   // пришли по утреннему пушу «как спалось?» → сразу к отметке
   useEffect(() => { if (location.hash === "#mark") setTimeout(() => document.getElementById("mark")?.scrollIntoView({ block: "center" }), 0); }, []);
 
@@ -89,7 +96,9 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
     toggles.noCaffeine ? "Без кофеина." : "",
     toggles.noBrightLight ? "Нет дневного света." : "",
     `За неделю: отмечено ${insight.daysLogged}/7 дней${insight.avgSleepMin != null ? `, средний сон ${(insight.avgSleepMin / 60).toFixed(1)} ч` : ""}${insight.alcoholNights > 0 ? `, ночей с алкоголем ${insight.alcoholNights}` : ""}.`,
-  ].filter(Boolean).join("\n"), [mode, view, profile, toggles, insight]);
+    // коуч должен помнить про красные флаги: с ними мягко направляем к врачу, а не советуем режим
+    screener?.flagged ? `ВАЖНО, анкета при входе показала признаки, требующие врача: ${screener.messagesRU.join(" ")}` : "",
+  ].filter(Boolean).join("\n"), [mode, view, profile, toggles, insight, screener]);
 
   const t = (k: keyof DayToggles) => setToggles({ ...toggles, [k]: !toggles[k] });
 

@@ -22,6 +22,25 @@ describe("dueWindows", () => {
   });
 });
 
+// Worker строит план по контексту дня из приложения (s.day). Если контекст игнорировать,
+// пуши приходят по «обычному дню», хотя на экране у человека другой план.
+describe("контекст дня меняет пуш-окна", () => {
+  const mk = (ctx: any) => planDay({ profile, ctx, lastNight:{ wokeHM: profile.anchorWakeHM, quality:3 }, history:[] });
+  const bed = (p: any) => p.windows.find((w: any) => w.kind === "target_bed")!.startMin;
+
+  it("режим «работаю допоздна» сдвигает отбой против обычного дня", () => {
+    const normal = mk({ date:"2026-07-24", mode:"normal", toggles:{} });
+    const crunch = mk({ date:"2026-07-24", mode:"crunch", crunchUntilHM:"27:00", toggles:{} });
+    expect(bed(crunch)).not.toBe(bed(normal));
+  });
+  it("«нельзя вздремнуть» заменяет совет спать на альтернативу", () => {
+    const noNap = mk({ date:"2026-07-24", mode:"normal", toggles:{ napUnavailable:true } });
+    const w = noNap.windows.find(w=>w.kind==="nap")!;
+    expect(w.title).toBe("Вместо дневного сна");        // не зовём спать
+    expect(w.detail).not.toMatch(/Поспи|будильник/);
+  });
+});
+
 describe("checkinDue (утренняя отметка)", () => {
   const wake = parseHM("07:00"); // отметка в 07:45
   it("fires in the 5-min slot at 07:45", () => {

@@ -1,5 +1,5 @@
 import { buildPushHTTPRequest } from "@pushforge/builder";
-import type { Profile } from "../../src/index.js";
+import type { Profile, DayMode, DayToggles } from "../../src/index.js";
 import { planDay, parseHM } from "../../src/index.js";
 import { dueWindows, checkinDue } from "../../src/push.js";
 import { coachStream, type CoachTurn } from "./coach.js";
@@ -24,6 +24,8 @@ interface StoredSub {
   profile: Profile;
   tzOffsetMin: number;
   sent?: { date: string; kinds: string[] };
+  // контекст дня из приложения: чтобы пуши шли по тому же плану, что человек видит на экране
+  day?: { date: string; mode: DayMode; toggles: DayToggles; crunchUntilHM?: string };
 }
 
 const CORS: Record<string, string> = {
@@ -41,12 +43,18 @@ export default {
       const body = (await req.json()) as Partial<StoredSub>;
       if (!body?.subscription?.endpoint)
         return new Response("bad request", { status: 400, headers: CORS });
+      // приложение шлёт сюда же тихие обновления профиля/дня — тогда запись уже есть
+      const existingRaw = await env.SUBS.get(body.subscription.endpoint);
+      const existing = existingRaw ? (JSON.parse(existingRaw) as StoredSub) : null;
       await env.SUBS.put(body.subscription.endpoint, JSON.stringify({
         subscription: body.subscription,
         profile: body.profile,
         tzOffsetMin: body.tzOffsetMin ?? 0,
+        ...(body.day ? { day: body.day } : existing?.day ? { day: existing.day } : {}),
+        ...(existing?.sent ? { sent: existing.sent } : {}), // не теряем «что уже отправлено сегодня»
       }));
-      // приветственный пуш — мгновенное подтверждение, что доставка работает
+      if (existing) return new Response("ok", { headers: CORS }); // тихая синхронизация — без приветствия
+      // приветственный пуш — мгновенное подтверждение, что доставка работает (только при первой подписке)
       try {
         const { endpoint, headers: h, body: pb } = await buildPushHTTPRequest({
           privateJWK: JSON.parse(env.VAPID_PRIVATE),
@@ -94,9 +102,16 @@ export default {
       const minOfDay = ((localMin % 1440) + 1440) % 1440;
       const localDate = new Date(localMin * 60000).toISOString().slice(0, 10);
 
+      // контекст дня берём из приложения, если он за сегодня; иначе обычный день
+      const d = s.day && s.day.date === localDate ? s.day : null;
       const plan = planDay({
         profile: s.profile,
-        ctx: { date: localDate, mode: "normal", toggles: {} },
+        ctx: {
+          date: localDate,
+          mode: d?.mode ?? "normal",
+          ...(d?.mode === "crunch" && d.crunchUntilHM ? { crunchUntilHM: d.crunchUntilHM } : {}),
+          toggles: d?.toggles ?? {},
+        },
         lastNight: { wokeHM: s.profile.anchorWakeHM, quality: 3 },
         history: [],
       });

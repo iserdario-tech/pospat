@@ -3,6 +3,7 @@ import type { Profile, ScreenerResult, DayLog } from "../index.js";
 import { Onboarding } from "./Onboarding.js";
 import { Today } from "./Today.js";
 import { loadState, saveState, exportAll, importAll, type StoredState } from "./storage.js";
+import { syncPushContext } from "./notifications.js";
 
 export function App() {
   const [state, setState] = useState<StoredState | null>(() => loadState());
@@ -29,6 +30,7 @@ export function App() {
     const restored = importAll(await file.text());
     if (!restored) { alert("Не похоже на копию pospat. Файл не подошёл."); return; }
     saveState(restored); setState(restored);
+    void syncPushContext(restored.profile);
     alert("Данные восстановлены ✓");
   };
 
@@ -36,6 +38,7 @@ export function App() {
     return <Onboarding initial={state?.profile} onDone={(profile: Profile, screener: ScreenerResult) => {
       const s: StoredState = { profile, history: state?.history ?? [], screener };
       saveState(s); setState(s); setEditing(false);
+      void syncPushContext(profile); // иначе пуши остались бы по старым настройкам
     }} />;
   }
   return (
@@ -55,7 +58,7 @@ export function App() {
         <input ref={fileRef} type="file" accept="application/json,.json" hidden
           onChange={(e) => { const f = e.target.files?.[0]; if (f) restore(f); e.target.value = ""; }} />
       </div>
-      <Today profile={state.profile} history={state.history} onLog={saveLog} />
+      <Today profile={state.profile} history={state.history} screener={state.screener} onLog={saveLog} />
     </>
   );
 }
