@@ -14,23 +14,34 @@ export function urlBase64ToUint8Array(b64: string): Uint8Array {
   return arr;
 }
 
+// iOS разрешает web-push только из PWA, добавленного на экран «Домой». В обычном Safari
+// подписка молча падает — поэтому ловим этот случай заранее и объясняем, что делать.
+function iosNeedsInstall(): boolean {
+  const ua = navigator.userAgent;
+  const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const standalone = (navigator as any).standalone === true || matchMedia("(display-mode: standalone)").matches;
+  return isIOS && !standalone;
+}
+
 export async function enableNotifications(profile: Profile): Promise<string> {
+  if (iosNeedsInstall())
+    return "На айфоне напоминания включаются только из приложения на экране «Домой». В Safari нажми «Поделиться» (квадрат со стрелкой) → «На экран „Домой“», потом открой pospat с иконки и снова нажми эту кнопку.";
   if (!("serviceWorker" in navigator) || !("PushManager" in window))
     return "Уведомления не поддерживаются этим браузером.";
-  const perm = await Notification.requestPermission();
-  if (perm !== "granted") return "Разрешение на уведомления не выдано.";
-  const reg = await navigator.serviceWorker.ready;
-  const sub = await reg.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC) as BufferSource,
-  });
-  if (BACKEND_URL) {
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") return "Разрешение не выдано. Включить можно в настройках браузера/приложения.";
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC) as BufferSource,
+    });
     await fetch(BACKEND_URL + "/subscribe", {
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ subscription: sub, profile, tzOffsetMin: -new Date().getTimezoneOffset() }),
     });
     return "Готово! Напоминания включены.";
+  } catch {
+    return "Не получилось включить напоминания. Попробуй ещё раз (на айфоне — открой приложение с иконки на «Домой»).";
   }
-  console.log("push subscription:", JSON.stringify(sub));
-  return "Разрешение получено ✓ Расписание напоминаний включим следующим шагом.";
 }

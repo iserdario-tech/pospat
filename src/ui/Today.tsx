@@ -13,6 +13,22 @@ function crunchStr(hm: string): string {
   return `${hh}:${String(m ?? 0).padStart(2, "0")}`;
 }
 
+// Спарклайн качества сна за 7 дней (1..5). Точки — отмеченные дни, линия — между соседними.
+function Sparkline({ series }: { series: (number | null)[] }) {
+  const W = 148, H = 34, pad = 4, n = series.length;
+  const x = (i: number) => pad + (i * (W - 2 * pad)) / (n - 1);
+  const y = (q: number) => H - pad - ((q - 1) / 4) * (H - 2 * pad);
+  const pts = series.map((q, i) => (q == null ? null : { x: x(i), y: y(q) }));
+  const segs: string[] = [];
+  for (let i = 1; i < n; i++) if (pts[i - 1] && pts[i]) segs.push(`${pts[i - 1]!.x},${pts[i - 1]!.y} ${pts[i]!.x},${pts[i]!.y}`);
+  return (
+    <svg className="spark" width={W} height={H} role="img" aria-label="Качество сна за 7 дней">
+      {segs.map((s, i) => <polyline key={i} points={s} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />)}
+      {pts.map((p, i) => p && <circle key={i} cx={p.x} cy={p.y} r={2.6} fill="currentColor" />)}
+    </svg>
+  );
+}
+
 // склонение: 1 день, 2 дня, 5 дней
 function plural(n: number, one: string, few: string, many: string): string {
   const m10 = n % 10, m100 = n % 100;
@@ -53,6 +69,14 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
 
   const insight = useMemo(() => weeklyInsight(history, today, profile.targetSleepMin), [history, today, profile.targetSleepMin]);
   const streak = useMemo(() => streakDays(history, today), [history, today]);
+  // качество сна по дням за последнюю неделю (UTC-даты, как в history)
+  const qualitySeries = useMemo(() => {
+    const base = Date.parse(today + "T00:00:00Z");
+    return [...Array(7)].map((_, i) => {
+      const d = new Date(base - (6 - i) * 86400000).toISOString().slice(0, 10);
+      return history.find((h) => h.date === d)?.quality ?? null;
+    });
+  }, [history, today]);
 
   const MODE_RU: Record<DayMode, string> = { normal: "обычный день", crunch: "работает допоздна", recovery: "день восстановления" };
   const coachContext = useMemo(() => [
@@ -133,6 +157,12 @@ export function Today({ profile, history, onLog }: { profile: Profile; history: 
           {insight.avgSleepMin != null && <span>Средний сон: {(insight.avgSleepMin / 60).toFixed(1)} ч</span>}
           {insight.alcoholNights > 0 && <span>🍷 {insight.alcoholNights} {plural(insight.alcoholNights, "ночь", "ночи", "ночей")} с алкоголем</span>}
         </div>
+        {insight.daysLogged >= 2 && (
+          <div className="spark-row">
+            <Sparkline series={qualitySeries} />
+            <span className="small muted">качество сна, 7 дней</span>
+          </div>
+        )}
         <div className="small muted" style={{ marginTop: 6 }}>{insight.summaryRU}</div>
       </section>
 

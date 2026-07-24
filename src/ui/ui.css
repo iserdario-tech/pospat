@@ -46,6 +46,8 @@ button.primary { width: 100%; margin-top: 18px; padding: 14px; border: 0; border
 .week { margin: 14px 0; padding: 12px; border: 1px solid #2a2f3a; border-radius: 12px; background: #12161d; }
 .week-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .streak { color: #d29922; font-size: 13px; }
+.spark-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.spark { color: #2f81f7; flex: none; }
 .week-stats { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; color: #c9d1e0; }
 .week-stats span { font-variant-numeric: tabular-nums; }
 .coach { margin: 12px 0 4px; border-top: 1px solid #1c2230; padding-top: 12px; }
